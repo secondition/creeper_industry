@@ -1,0 +1,13 @@
+{
+  "itemGroup.creeper_industry": "Example Mod Tab",
+  "block.creeper_industry.example_block": "Example Block",
+  "item.creeper_industry.example_item": "Example Item",
+
+  "creeper_industry.configuration.title": "Creeper Industry Configs",
+  "creeper_industry.configuration.section.creeper_industry.common.toml": "Creeper Industry Configs",
+  "creeper_industry.configuration.section.creeper_industry.common.toml.title": "Creeper Industry Configs",
+  "creeper_industry.configuration.items": "Item List",
+  "creeper_industry.configuration.logDirtBlock": "Log Dirt Block",
+  "creeper_industry.configuration.magicNumberIntroduction": "Magic Number Text",
+  "creeper_industry.configuration.magicNumber": "Magic Number"
+}
