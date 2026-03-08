@@ -21,6 +21,13 @@ public class CreeperIndustry {
         CIItems.register(modEventBus);
         CIBlockEntityTypes.register(modEventBus);
         CIEntityTypes.register(modEventBus);
+        CIMenuTypes.register(modEventBus);
+        CIRecipeTypes.register(modEventBus);
+        CIAttachmentTypes.register(modEventBus);
+        CIDataComponents.register(modEventBus);
+
+        modEventBus.addListener(CIDatagen::gatherData);
+        modEventBus.addListener(CIPackets::register);
     }
 
     public static ResourceLocation asResource(String path) {
