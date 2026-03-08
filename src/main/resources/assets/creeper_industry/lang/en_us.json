@@ -1,3 +1,14 @@
 {
-  "itemGroup.creeper_industry.main": "Creeper Industry"
+  "itemGroup.creeper_industry.main": "Creeper Industry",
+  "item.creeper_industry.catnip": "Catnip",
+  "item.creeper_industry.guided_firework_rocket": "Guided Firework Rocket",
+  "block.creeper_industry.blastproof_duct": "Blastproof Duct",
+  "block.creeper_industry.blastproof_frame": "Blastproof Frame",
+  "block.creeper_industry.blastproof_glass": "Blastproof Glass",
+  "block.creeper_industry.precision_dropper": "Precision Dropper",
+  "block.creeper_industry.botanical_biosphere": "Botanical Biosphere",
+  "block.creeper_industry.zoological_biosphere": "Zoological Biosphere",
+  "block.creeper_industry.monster_biosphere": "Monster Biosphere",
+  "block.creeper_industry.three_d_printer": "3D Printer",
+  "block.creeper_industry.rocket_launcher": "Rocket Launcher"
 }

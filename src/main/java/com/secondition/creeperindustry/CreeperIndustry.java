@@ -16,6 +16,11 @@ public class CreeperIndustry {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public CreeperIndustry(IEventBus modEventBus, ModContainer modContainer) {
+        CICreativeModeTabs.register(modEventBus);
+        CIBlocks.register(modEventBus);
+        CIItems.register(modEventBus);
+        CIBlockEntityTypes.register(modEventBus);
+        CIEntityTypes.register(modEventBus);
     }
 
     public static ResourceLocation asResource(String path) {
