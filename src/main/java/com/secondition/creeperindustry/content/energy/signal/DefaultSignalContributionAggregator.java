@@ -18,7 +18,7 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
             commonPeriod = leastCommonMultiple(commonPeriod, contribution.source().signal().periodTicks());
         }
 
-        int strongestAmplitude = 0;
+        long absoluteValueSum = 0L;
         int strongestCost = Integer.MAX_VALUE;
         for (int sample = 0; sample < commonPeriod; sample++) {
             int sampleValue = 0;
@@ -32,13 +32,14 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
             }
 
             int absValue = Math.abs(sampleValue);
-            if (absValue > strongestAmplitude) {
-                strongestAmplitude = absValue;
+            absoluteValueSum += absValue;
+            if (absValue > 0) {
                 strongestCost = sampleStrongestCost == Integer.MAX_VALUE ? 0 : sampleStrongestCost;
             }
         }
 
-        SignalDefinition signal = new SignalDefinition(strongestAmplitude, commonPeriod, 0, SignalWaveform.SQUARE);
+        int averageAmplitude = Math.toIntExact(absoluteValueSum / commonPeriod);
+        SignalDefinition signal = new SignalDefinition(averageAmplitude, commonPeriod, 0, SignalWaveform.SQUARE);
         return new AggregatedSignal(level, targetPos, gameTime, signal, contributions.size(), strongestCost == Integer.MAX_VALUE ? 0 : strongestCost);
     }
 

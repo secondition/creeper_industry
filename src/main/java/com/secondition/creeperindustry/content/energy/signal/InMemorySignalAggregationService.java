@@ -22,8 +22,6 @@ public class InMemorySignalAggregationService implements SignalAggregationServic
     @Override
     public void submitContribution(Level level, DeliveredSignal contribution) {
         long gameTime = contribution.source().gameTime();
-        pruneOldEntries(level.dimension(), gameTime);
-
         AggregationKey key = new AggregationKey(level.dimension(), contribution.targetPos(), gameTime);
         List<DeliveredSignal> bucket = contributions.computeIfAbsent(key, ignored -> new CopyOnWriteArrayList<>());
         bucket.add(contribution);
@@ -37,10 +35,11 @@ public class InMemorySignalAggregationService implements SignalAggregationServic
         receiver.receiveSignal(aggregatedSignal);
     }
 
-    private void pruneOldEntries(ResourceKey<Level> level, long currentGameTime) {
+    @Override
+    public void clearThroughTick(ResourceKey<Level> level, long gameTime) {
         List<AggregationKey> staleKeys = new ArrayList<>();
         for (AggregationKey key : contributions.keySet()) {
-            if (key.level().equals(level) && key.gameTime() < currentGameTime) {
+            if (key.level().equals(level) && key.gameTime() <= gameTime) {
                 staleKeys.add(key);
             }
         }
