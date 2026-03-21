@@ -51,15 +51,9 @@ public class SignalUpdateDetectorBlock extends SimpleEntityBlock implements Enti
         }
 
         if (level.getBlockEntity(pos) instanceof SignalUpdateDetectorBlockEntity detector) {
-            Component sourceComponent = detector.getLastSourceTypeId() == null
-                    ? Component.translatable("message.creeper_industry.signal_update_detector.none")
-                    : Component.literal(detector.getLastSourceTypeId().toString());
             player.displayClientMessage(Component.translatable(
                     "message.creeper_industry.signal_update_detector.reading",
-                    detector.getLastAmplitude(),
-                    detector.getLastPropagationCost(),
-                    detector.getLastGameTime(),
-                    sourceComponent
+                    detector.getLastAmplitude()
             ).withStyle(ChatFormatting.YELLOW), false);
         }
 

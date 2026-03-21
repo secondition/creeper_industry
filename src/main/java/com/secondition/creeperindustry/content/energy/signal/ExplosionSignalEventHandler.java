@@ -10,7 +10,7 @@ import net.neoforged.neoforge.event.level.ExplosionEvent;
 @EventBusSubscriber(modid = CreeperIndustry.MODID)
 public final class ExplosionSignalEventHandler {
     private static final ExplosionSignalService EXPLOSION_SIGNAL_SERVICE = new ExplosionSignalService(
-            new ExplosionSignalContextFactory(),
+            new ExplosionSignalContextFactory(new DefaultExplosionSignalFilter()),
             new DefaultExplosionSignalAmplitudeResolver(),
             CISignalSourceTypes.transientDispatcher()
     );

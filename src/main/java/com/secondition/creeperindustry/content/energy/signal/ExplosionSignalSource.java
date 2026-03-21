@@ -17,7 +17,6 @@ public record ExplosionSignalSource(
         Vec3 position,
         long gameTime,
         SignalDefinition signal,
-        ExplosionSignalKind kind,
         float explosionPower,
         ResourceLocation sourceId
 ) implements SignalSource {
@@ -43,7 +42,6 @@ public record ExplosionSignalSource(
                 context.position(),
                 context.gameTime(),
                 signal,
-                context.kind(),
                 context.explosionPower(),
                 context.sourceId()
         ));

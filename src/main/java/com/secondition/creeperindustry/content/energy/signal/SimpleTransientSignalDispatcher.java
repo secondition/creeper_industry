@@ -1,6 +1,7 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
 import net.minecraft.core.BlockPos;
+import com.secondition.creeperindustry.CISignalSourceTypes;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -33,7 +34,10 @@ public class SimpleTransientSignalDispatcher implements TransientSignalDispatche
                         continue;
                     }
 
-                    receiver.receiveSignal(new DeliveredSignal(source, targetPos.immutable(), effectiveAmplitude, propagationCost));
+                    CISignalSourceTypes.signalAggregationService().submitContribution(
+                            level,
+                            new DeliveredSignal(source, targetPos.immutable(), effectiveAmplitude, propagationCost)
+                    );
                 }
             }
         }

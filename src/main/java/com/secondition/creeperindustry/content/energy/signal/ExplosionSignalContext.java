@@ -9,7 +9,6 @@ public record ExplosionSignalContext(
         ResourceKey<Level> level,
         Vec3 position,
         long gameTime,
-        ExplosionSignalKind kind,
         float explosionPower,
         ResourceLocation sourceId
 ) {
