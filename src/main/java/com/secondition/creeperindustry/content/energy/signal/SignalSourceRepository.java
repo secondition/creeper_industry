@@ -8,13 +8,13 @@ import net.minecraft.world.level.Level;
 public interface SignalSourceRepository {
     <T extends SignalSource> SignalSourceType<T> registerType(SignalSourceType<T> type);
 
-    void submit(SignalSource source);
+    void put(SignalSource source);
 
     Collection<SignalSourceType<?>> registeredTypes();
 
-    Collection<SignalSource> getSources(ResourceKey<Level> level, long gameTime);
+    Collection<SignalSource> getActiveSources(ResourceKey<Level> level, long gameTime);
 
-    Collection<SignalSource> drainSources(ResourceKey<Level> level, long gameTime);
+    Collection<SignalSource> removeActiveSources(ResourceKey<Level> level, long gameTime);
 
     void clearLevel(ResourceKey<Level> level);
 }
