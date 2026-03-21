@@ -2,14 +2,14 @@ package com.secondition.creeperindustry;
 
 import com.secondition.creeperindustry.content.energy.signal.ExplosionSignalSource;
 import com.secondition.creeperindustry.content.energy.signal.InMemorySignalSourceRepository;
-import com.secondition.creeperindustry.content.energy.signal.NoOpTransientSignalDispatcher;
 import com.secondition.creeperindustry.content.energy.signal.SignalSourceRepository;
 import com.secondition.creeperindustry.content.energy.signal.SignalSourceType;
+import com.secondition.creeperindustry.content.energy.signal.SimpleTransientSignalDispatcher;
 import com.secondition.creeperindustry.content.energy.signal.TransientSignalDispatcher;
 
 public class CISignalSourceTypes {
     private static final SignalSourceRepository REPOSITORY = new InMemorySignalSourceRepository();
-    private static final TransientSignalDispatcher TRANSIENT_DISPATCHER = new NoOpTransientSignalDispatcher();
+    private static final TransientSignalDispatcher TRANSIENT_DISPATCHER = new SimpleTransientSignalDispatcher();
 
     public static final SignalSourceType<ExplosionSignalSource> EXPLOSION = register("explosion", ExplosionSignalSource.class);
 

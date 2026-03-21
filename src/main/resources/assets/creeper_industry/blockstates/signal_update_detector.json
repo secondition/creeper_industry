@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "powered=false": {
+      "model": "creeper_industry:block/signal_update_detector"
+    },
+    "powered=true": {
+      "model": "creeper_industry:block/signal_update_detector_on"
+    }
+  }
+}

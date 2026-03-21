@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofDuctBlock;
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofFrameBlock;
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofGlassBlock;
+import com.secondition.creeperindustry.content.energy.signal.SignalUpdateDetectorBlock;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperBlock;
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherBlock;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereBlock;
@@ -29,6 +30,8 @@ public class CIBlocks {
             () -> new BlastproofFrameBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(8.0F, 16.0F).sound(SoundType.NETHERITE_BLOCK)));
     public static final Supplier<Block> BLASTPROOF_GLASS = BLOCKS.register("blastproof_glass",
             () -> new BlastproofGlassBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).strength(5.0F, 10.0F).sound(SoundType.GLASS)));
+    public static final Supplier<Block> SIGNAL_UPDATE_DETECTOR = BLOCKS.register("signal_update_detector",
+            () -> new SignalUpdateDetectorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL)));
 
     public static final Supplier<Block> PRECISION_DROPPER = BLOCKS.register("precision_dropper",
             () -> new PrecisionDropperBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DISPENSER).strength(3.5F)));

@@ -24,7 +24,7 @@ public class ExplosionSignalService {
         }
 
         Optional<ExplosionSignalSource> source = ExplosionSignalSource.fromContext(context.get(), amplitudeResolver);
-        source.ifPresent(dispatcher::dispatch);
+        source.ifPresent(signalSource -> dispatcher.dispatch(level, signalSource));
         return source;
     }
 }
