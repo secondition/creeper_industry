@@ -19,5 +19,10 @@ public final class SignalAggregationEventHandler {
         }
 
         CISignalSourceTypes.signalAggregationService().clearThroughTick(event.getLevel().dimension(), event.getLevel().getGameTime());
+        CISignalSourceTypes.continuousSignalUpdateService().refreshReceivers(
+                event.getLevel(),
+                CISignalSourceTypes.transientSignalImpactTracker()
+                        .popAffectedTargetsThroughTick(event.getLevel().dimension(), event.getLevel().getGameTime())
+        );
     }
 }

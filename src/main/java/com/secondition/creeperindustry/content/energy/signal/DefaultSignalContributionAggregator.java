@@ -13,6 +13,13 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
             throw new IllegalArgumentException("Cannot aggregate an empty contribution set");
         }
 
+        boolean containsTransientSignal = contributions.stream()
+                .map(DeliveredSignal::source)
+                .anyMatch(source -> !(source instanceof ContinuousSignalSource));
+        if (containsTransientSignal) {
+            return aggregateCurrentTick(level, targetPos, gameTime, contributions);
+        }
+
         int commonPeriod = 1;
         for (DeliveredSignal contribution : contributions) {
             commonPeriod = leastCommonMultiple(commonPeriod, contribution.source().signal().periodTicks());
@@ -24,7 +31,7 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
             int sampleValue = 0;
             int sampleStrongestCost = Integer.MAX_VALUE;
             for (DeliveredSignal contribution : contributions) {
-                int value = sampleSignal(contribution, sample);
+                int value = sampleSignal(contribution, gameTime + sample);
                 sampleValue += value;
                 if (value != 0) {
                     sampleStrongestCost = Math.min(sampleStrongestCost, contribution.propagationCost());
@@ -34,7 +41,7 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
             int absValue = Math.abs(sampleValue);
             absoluteValueSum += absValue;
             if (absValue > 0) {
-                strongestCost = sampleStrongestCost == Integer.MAX_VALUE ? 0 : sampleStrongestCost;
+                strongestCost = Math.min(strongestCost, sampleStrongestCost == Integer.MAX_VALUE ? 0 : sampleStrongestCost);
             }
         }
 
@@ -43,13 +50,27 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
         return new AggregatedSignal(level, targetPos, gameTime, signal, contributions.size(), strongestCost == Integer.MAX_VALUE ? 0 : strongestCost);
     }
 
-    private int sampleSignal(DeliveredSignal contribution, int sampleTick) {
-        SignalDefinition signal = contribution.source().signal();
-        int period = signal.periodTicks();
-        int phase = Math.floorMod(sampleTick + signal.phaseTicks(), period);
-        return switch (signal.waveform()) {
-            case SQUARE -> phase * 2 < period ? contribution.effectiveAmplitude() : -contribution.effectiveAmplitude();
-        };
+    private AggregatedSignal aggregateCurrentTick(ResourceKey<Level> level, BlockPos targetPos, long gameTime, Collection<DeliveredSignal> contributions) {
+        int summedValue = 0;
+        int strongestCost = Integer.MAX_VALUE;
+        for (DeliveredSignal contribution : contributions) {
+            int value = sampleSignal(contribution, gameTime);
+            summedValue += value;
+            if (value != 0) {
+                strongestCost = Math.min(strongestCost, contribution.propagationCost());
+            }
+        }
+
+        SignalDefinition signal = new SignalDefinition(Math.abs(summedValue), 1, 0, SignalWaveform.SQUARE);
+        return new AggregatedSignal(level, targetPos, gameTime, signal, contributions.size(), strongestCost == Integer.MAX_VALUE ? 0 : strongestCost);
+    }
+
+    private int sampleSignal(DeliveredSignal contribution, long absoluteGameTime) {
+        return SignalSampling.sampleAtGameTime(
+                contribution.source().signal(),
+                contribution.effectiveAmplitude(),
+                absoluteGameTime
+        );
     }
 
     private int leastCommonMultiple(int left, int right) {
