@@ -11,7 +11,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class SignalUpdateDetectorBlockEntity extends BlockEntity implements SignalReceiver {
-    private int lastAmplitude;
+    private int currentAmplitude;
+    private int lastNonZeroAmplitude;
 
     public SignalUpdateDetectorBlockEntity(BlockPos pos, BlockState blockState) {
         super(CIBlockEntityTypes.SIGNAL_UPDATE_DETECTOR.get(), pos, blockState);
@@ -19,7 +20,10 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
 
     @Override
     public void receiveSignal(AggregatedSignal signal) {
-        lastAmplitude = signal.signal().amplitude();
+        currentAmplitude = signal.signal().amplitude();
+        if (currentAmplitude > 0) {
+            lastNonZeroAmplitude = currentAmplitude;
+        }
 
         if (level != null) {
             BlockState state = getBlockState();
@@ -35,7 +39,7 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
 
     @Override
     public void clearSignal() {
-        lastAmplitude = 0;
+        currentAmplitude = 0;
 
         if (level != null) {
             BlockState state = getBlockState();
@@ -49,8 +53,12 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
         setChanged();
     }
 
-    public int getLastAmplitude() {
-        return lastAmplitude;
+    public int getCurrentAmplitude() {
+        return currentAmplitude;
+    }
+
+    public int getLastNonZeroAmplitude() {
+        return lastNonZeroAmplitude;
     }
 
     @Override
@@ -75,13 +83,15 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
     @Override
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
-        tag.putInt("last_amplitude", lastAmplitude);
+        tag.putInt("current_amplitude", currentAmplitude);
+        tag.putInt("last_non_zero_amplitude", lastNonZeroAmplitude);
     }
 
     @Override
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
-        lastAmplitude = tag.getInt("last_amplitude");
+        currentAmplitude = tag.getInt("current_amplitude");
+        lastNonZeroAmplitude = tag.getInt("last_non_zero_amplitude");
     }
 
     private void registerReceiver() {

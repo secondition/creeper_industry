@@ -53,7 +53,8 @@ public class SignalUpdateDetectorBlock extends SimpleEntityBlock implements Enti
         if (level.getBlockEntity(pos) instanceof SignalUpdateDetectorBlockEntity detector) {
             player.displayClientMessage(Component.translatable(
                     "message.creeper_industry.signal_update_detector.reading",
-                    detector.getLastAmplitude()
+                    detector.getCurrentAmplitude(),
+                    detector.getLastNonZeroAmplitude()
             ).withStyle(ChatFormatting.YELLOW), false);
         }
 
