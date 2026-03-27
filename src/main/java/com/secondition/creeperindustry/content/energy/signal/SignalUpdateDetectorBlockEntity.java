@@ -12,6 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class SignalUpdateDetectorBlockEntity extends BlockEntity implements SignalReceiver {
     private int currentAmplitude;
+    private int currentInstantaneousValue;
     private int lastNonZeroAmplitude;
 
     public SignalUpdateDetectorBlockEntity(BlockPos pos, BlockState blockState) {
@@ -21,6 +22,7 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
     @Override
     public void receiveSignal(AggregatedSignal signal) {
         currentAmplitude = signal.signal().amplitude();
+        currentInstantaneousValue = signal.instantaneousValue();
         if (currentAmplitude > 0) {
             lastNonZeroAmplitude = currentAmplitude;
         }
@@ -40,6 +42,7 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
     @Override
     public void clearSignal() {
         currentAmplitude = 0;
+        currentInstantaneousValue = 0;
 
         if (level != null) {
             BlockState state = getBlockState();
@@ -59,6 +62,10 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
 
     public int getLastNonZeroAmplitude() {
         return lastNonZeroAmplitude;
+    }
+
+    public int getCurrentInstantaneousValue() {
+        return currentInstantaneousValue;
     }
 
     @Override
@@ -84,6 +91,7 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
     protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putInt("current_amplitude", currentAmplitude);
+        tag.putInt("current_instantaneous_value", currentInstantaneousValue);
         tag.putInt("last_non_zero_amplitude", lastNonZeroAmplitude);
     }
 
@@ -91,6 +99,7 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         currentAmplitude = tag.getInt("current_amplitude");
+        currentInstantaneousValue = tag.getInt("current_instantaneous_value");
         lastNonZeroAmplitude = tag.getInt("last_non_zero_amplitude");
     }
 
@@ -115,7 +124,7 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
         }
 
         if (!CISignalSourceTypes.continuousSignalSourceRepository().getActiveSources(currentLevel.dimension()).isEmpty()) {
-            CISignalSourceTypes.continuousSignalPropagationService().refreshTarget(currentLevel, worldPosition);
+            CISignalSourceTypes.unifiedSignalRefreshService().refreshTarget(currentLevel, worldPosition);
         }
     }
 }

@@ -20,6 +20,7 @@ public class CICreativeModeTabs {
                 output.accept(CIBlocks.BLASTPROOF_DUCT.get());
                 output.accept(CIBlocks.BLASTPROOF_FRAME.get());
                 output.accept(CIBlocks.BLASTPROOF_GLASS.get());
+                output.accept(CIBlocks.CONTINUOUS_SIGNAL_EMITTER.get());
                 output.accept(CIBlocks.SIGNAL_UPDATE_DETECTOR.get());
                 output.accept(CIBlocks.PRECISION_DROPPER.get());
                 output.accept(CIBlocks.BOTANICAL_BIOSPHERE.get());

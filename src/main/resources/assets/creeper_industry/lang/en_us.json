@@ -5,6 +5,7 @@
   "block.creeper_industry.blastproof_duct": "Blastproof Duct",
   "block.creeper_industry.blastproof_frame": "Blastproof Frame",
   "block.creeper_industry.blastproof_glass": "Blastproof Glass",
+  "block.creeper_industry.continuous_signal_emitter": "Continuous Signal Emitter",
   "block.creeper_industry.signal_update_detector": "Signal Update Detector",
   "block.creeper_industry.precision_dropper": "Precision Dropper",
   "block.creeper_industry.botanical_biosphere": "Botanical Biosphere",
@@ -12,5 +13,7 @@
   "block.creeper_industry.monster_biosphere": "Monster Biosphere",
   "block.creeper_industry.three_d_printer": "3D Printer",
   "block.creeper_industry.rocket_launcher": "Rocket Launcher",
-  "message.creeper_industry.signal_update_detector.reading": "Signal current=%s, last_non_zero=%s"
+  "message.creeper_industry.continuous_signal_emitter.amplitude": "Emitter amplitude=%s, period=%s",
+  "message.creeper_industry.continuous_signal_emitter.period": "Emitter period=%s, amplitude=%s",
+  "message.creeper_industry.signal_update_detector.reading": "Signal current=%s, instantaneous=%s, last_non_zero=%s"
 }

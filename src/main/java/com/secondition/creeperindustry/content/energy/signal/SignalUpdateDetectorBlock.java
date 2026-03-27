@@ -1,12 +1,12 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
 import com.mojang.serialization.MapCodec;
+import com.secondition.creeperindustry.CISignalSourceTypes;
 import com.secondition.creeperindustry.foundation.blockEntity.SimpleEntityBlock;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -50,14 +50,21 @@ public class SignalUpdateDetectorBlock extends SimpleEntityBlock implements Enti
             return InteractionResult.SUCCESS;
         }
 
+        refreshForDebugRead(level, pos);
+
         if (level.getBlockEntity(pos) instanceof SignalUpdateDetectorBlockEntity detector) {
             player.displayClientMessage(Component.translatable(
                     "message.creeper_industry.signal_update_detector.reading",
                     detector.getCurrentAmplitude(),
+                    detector.getCurrentInstantaneousValue(),
                     detector.getLastNonZeroAmplitude()
             ).withStyle(ChatFormatting.YELLOW), false);
         }
 
         return InteractionResult.CONSUME;
+    }
+
+    private void refreshForDebugRead(Level level, BlockPos pos) {
+        CISignalSourceTypes.unifiedSignalRefreshService().refreshTarget(level, pos);
     }
 }

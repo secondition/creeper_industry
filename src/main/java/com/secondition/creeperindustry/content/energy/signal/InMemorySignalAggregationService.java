@@ -6,17 +6,16 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import com.secondition.creeperindustry.CISignalSourceTypes;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class InMemorySignalAggregationService implements SignalAggregationService {
-    private final SignalContributionAggregator aggregator;
     private final Map<AggregationKey, List<DeliveredSignal>> contributions = new ConcurrentHashMap<>();
 
-    public InMemorySignalAggregationService(SignalContributionAggregator aggregator) {
-        this.aggregator = aggregator;
+    public InMemorySignalAggregationService() {
     }
 
     @Override
@@ -25,14 +24,17 @@ public class InMemorySignalAggregationService implements SignalAggregationServic
         AggregationKey key = new AggregationKey(level.dimension(), contribution.targetPos(), gameTime);
         List<DeliveredSignal> bucket = contributions.computeIfAbsent(key, ignored -> new CopyOnWriteArrayList<>());
         bucket.add(contribution);
+        CISignalSourceTypes.unifiedSignalRefreshService().refreshTarget(level, contribution.targetPos(), gameTime);
+    }
 
-        BlockEntity blockEntity = level.getBlockEntity(contribution.targetPos());
-        if (!(blockEntity instanceof SignalReceiver receiver)) {
-            return;
+    @Override
+    public List<DeliveredSignal> getSubmittedContributions(ResourceKey<Level> level, BlockPos targetPos, long gameTime) {
+        AggregationKey key = new AggregationKey(level, targetPos, gameTime);
+        List<DeliveredSignal> bucket = contributions.get(key);
+        if (bucket == null) {
+            return List.of();
         }
-
-        AggregatedSignal aggregatedSignal = aggregator.aggregate(level.dimension(), contribution.targetPos(), gameTime, List.copyOf(bucket));
-        receiver.receiveSignal(aggregatedSignal);
+        return List.copyOf(bucket);
     }
 
     @Override

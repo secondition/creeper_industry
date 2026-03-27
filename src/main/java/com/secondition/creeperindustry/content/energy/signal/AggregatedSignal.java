@@ -9,6 +9,7 @@ public record AggregatedSignal(
         BlockPos targetPos,
         long gameTime,
         SignalDefinition signal,
+        int instantaneousValue,
         int contributionCount,
         int strongestPropagationCost
 ) {

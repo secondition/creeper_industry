@@ -25,6 +25,11 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
             commonPeriod = leastCommonMultiple(commonPeriod, contribution.source().signal().periodTicks());
         }
 
+        int currentTickValue = 0;
+        for (DeliveredSignal contribution : contributions) {
+            currentTickValue += sampleSignal(contribution, gameTime);
+        }
+
         long absoluteValueSum = 0L;
         int strongestCost = Integer.MAX_VALUE;
         for (int sample = 0; sample < commonPeriod; sample++) {
@@ -47,7 +52,7 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
 
         int averageAmplitude = Math.toIntExact(absoluteValueSum / commonPeriod);
         SignalDefinition signal = new SignalDefinition(averageAmplitude, commonPeriod, 0, SignalWaveform.SQUARE);
-        return new AggregatedSignal(level, targetPos, gameTime, signal, contributions.size(), strongestCost == Integer.MAX_VALUE ? 0 : strongestCost);
+        return new AggregatedSignal(level, targetPos, gameTime, signal, currentTickValue, contributions.size(), strongestCost == Integer.MAX_VALUE ? 0 : strongestCost);
     }
 
     private AggregatedSignal aggregateCurrentTick(ResourceKey<Level> level, BlockPos targetPos, long gameTime, Collection<DeliveredSignal> contributions) {
@@ -62,7 +67,7 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
         }
 
         SignalDefinition signal = new SignalDefinition(Math.abs(summedValue), 1, 0, SignalWaveform.SQUARE);
-        return new AggregatedSignal(level, targetPos, gameTime, signal, contributions.size(), strongestCost == Integer.MAX_VALUE ? 0 : strongestCost);
+        return new AggregatedSignal(level, targetPos, gameTime, signal, summedValue, contributions.size(), strongestCost == Integer.MAX_VALUE ? 0 : strongestCost);
     }
 
     private int sampleSignal(DeliveredSignal contribution, long absoluteGameTime) {

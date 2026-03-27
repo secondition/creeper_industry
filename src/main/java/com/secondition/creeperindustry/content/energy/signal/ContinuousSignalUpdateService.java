@@ -1,6 +1,7 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.UUID;
 
 import net.minecraft.core.BlockPos;
@@ -10,23 +11,28 @@ public class ContinuousSignalUpdateService {
     private final ContinuousSignalSourceRepository repository;
     private final SignalReceiverIndex receiverIndex;
     private final SignalReceiverSelector receiverSelector;
-    private final ContinuousSignalPropagationService propagationService;
+    private final UnifiedSignalRefreshService refreshService;
 
     public ContinuousSignalUpdateService(
             ContinuousSignalSourceRepository repository,
             SignalReceiverIndex receiverIndex,
             SignalReceiverSelector receiverSelector,
-            ContinuousSignalPropagationService propagationService
+            UnifiedSignalRefreshService refreshService
     ) {
         this.repository = repository;
         this.receiverIndex = receiverIndex;
         this.receiverSelector = receiverSelector;
-        this.propagationService = propagationService;
+        this.refreshService = refreshService;
     }
 
     public void upsert(Level level, ContinuousSignalSource source) {
+        Collection<BlockPos> receiverPositions = new LinkedHashSet<>();
+        repository.get(level.dimension(), source.id())
+                .ifPresent(previousSource -> receiverPositions.addAll(receiverSelector.getPotentialTargets(level.dimension(), previousSource)));
+
         repository.put(source);
-        refreshAffectedReceivers(level, source);
+        receiverPositions.addAll(receiverSelector.getPotentialTargets(level.dimension(), source));
+        refreshReceivers(level, receiverPositions);
     }
 
     public void remove(Level level, UUID sourceId) {
@@ -39,7 +45,7 @@ public class ContinuousSignalUpdateService {
     }
 
     public void refreshReceivers(Level level, Collection<BlockPos> receiverPositions) {
-        propagationService.refreshTargets(level, receiverPositions);
+        refreshService.refreshTargets(level, receiverPositions);
     }
 
     private void refreshAffectedReceivers(Level level, ContinuousSignalSource source) {

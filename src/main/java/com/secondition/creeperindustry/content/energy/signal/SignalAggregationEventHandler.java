@@ -18,11 +18,16 @@ public final class SignalAggregationEventHandler {
             return;
         }
 
-        CISignalSourceTypes.signalAggregationService().clearThroughTick(event.getLevel().dimension(), event.getLevel().getGameTime());
+        long staleThroughTick = event.getLevel().getGameTime() - 1;
+        if (staleThroughTick < 0) {
+            return;
+        }
+
+        CISignalSourceTypes.signalAggregationService().clearThroughTick(event.getLevel().dimension(), staleThroughTick);
         CISignalSourceTypes.continuousSignalUpdateService().refreshReceivers(
                 event.getLevel(),
                 CISignalSourceTypes.transientSignalImpactTracker()
-                        .popAffectedTargetsThroughTick(event.getLevel().dimension(), event.getLevel().getGameTime())
+                        .popAffectedTargetsThroughTick(event.getLevel().dimension(), staleThroughTick)
         );
     }
 }

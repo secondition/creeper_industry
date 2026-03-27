@@ -19,6 +19,7 @@ import com.secondition.creeperindustry.content.energy.signal.SignalReceiverSelec
 import com.secondition.creeperindustry.content.energy.signal.SimpleTransientSignalDispatcher;
 import com.secondition.creeperindustry.content.energy.signal.TransientSignalImpactTracker;
 import com.secondition.creeperindustry.content.energy.signal.TransientSignalDispatcher;
+import com.secondition.creeperindustry.content.energy.signal.UnifiedSignalRefreshService;
 
 public class CISignalSourceTypes {
     private static final SignalSourceRepository REPOSITORY = new InMemorySignalSourceRepository();
@@ -27,16 +28,21 @@ public class CISignalSourceTypes {
     private static final SignalReceiverSelector SIGNAL_RECEIVER_SELECTOR = new SignalReceiverSelector(SIGNAL_RECEIVER_INDEX);
     private static final TransientSignalImpactTracker TRANSIENT_SIGNAL_IMPACT_TRACKER = new InMemoryTransientSignalImpactTracker();
     private static final DefaultSignalContributionAggregator SIGNAL_CONTRIBUTION_AGGREGATOR = new DefaultSignalContributionAggregator();
-    private static final SignalAggregationService SIGNAL_AGGREGATION_SERVICE = new InMemorySignalAggregationService(SIGNAL_CONTRIBUTION_AGGREGATOR);
+    private static final SignalAggregationService SIGNAL_AGGREGATION_SERVICE = new InMemorySignalAggregationService();
     private static final ContinuousSignalPropagationService CONTINUOUS_SIGNAL_PROPAGATION_SERVICE = new ContinuousSignalPropagationService(
             CONTINUOUS_SOURCE_REPOSITORY,
+            SIGNAL_CONTRIBUTION_AGGREGATOR
+    );
+    private static final UnifiedSignalRefreshService UNIFIED_SIGNAL_REFRESH_SERVICE = new UnifiedSignalRefreshService(
+            CONTINUOUS_SIGNAL_PROPAGATION_SERVICE,
+            SIGNAL_AGGREGATION_SERVICE,
             SIGNAL_CONTRIBUTION_AGGREGATOR
     );
     private static final ContinuousSignalUpdateService CONTINUOUS_SIGNAL_UPDATE_SERVICE = new ContinuousSignalUpdateService(
             CONTINUOUS_SOURCE_REPOSITORY,
             SIGNAL_RECEIVER_INDEX,
             SIGNAL_RECEIVER_SELECTOR,
-            CONTINUOUS_SIGNAL_PROPAGATION_SERVICE
+            UNIFIED_SIGNAL_REFRESH_SERVICE
     );
     private static final TransientSignalDispatcher TRANSIENT_DISPATCHER = new SimpleTransientSignalDispatcher();
 
@@ -81,5 +87,9 @@ public class CISignalSourceTypes {
 
     public static SignalAggregationService signalAggregationService() {
         return SIGNAL_AGGREGATION_SERVICE;
+    }
+
+    public static UnifiedSignalRefreshService unifiedSignalRefreshService() {
+        return UNIFIED_SIGNAL_REFRESH_SERVICE;
     }
 }
