@@ -20,6 +20,7 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
     private UUID sourceId = UUID.randomUUID();
     private int amplitude = AMPLITUDE_OPTIONS[0];
     private int periodTicks = PERIOD_OPTIONS[0];
+    private boolean sourceRegistered;
 
     public ContinuousSignalEmitterBlockEntity(BlockPos pos, BlockState blockState) {
         super(CIBlockEntityTypes.CONTINUOUS_SIGNAL_EMITTER.get(), pos, blockState);
@@ -33,13 +34,13 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
 
     @Override
     public void setRemoved() {
-        removeSignalSource();
+        removeSignalSource(true);
         super.setRemoved();
     }
 
     @Override
     public void onChunkUnloaded() {
-        removeSignalSource();
+        removeSignalSource(false);
         super.onChunkUnloaded();
     }
 
@@ -95,14 +96,21 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
                 new SignalDefinition(amplitude, periodTicks, 0, SignalWaveform.SQUARE)
         );
         CISignalSourceTypes.continuousSignalUpdateService().upsert(currentLevel, source);
+        sourceRegistered = true;
     }
 
-    private void removeSignalSource() {
+    private void removeSignalSource(boolean refreshAffectedReceivers) {
         Level currentLevel = level;
-        if (currentLevel == null || currentLevel.isClientSide()) {
+        if (currentLevel == null || currentLevel.isClientSide() || !sourceRegistered) {
             return;
         }
-        CISignalSourceTypes.continuousSignalUpdateService().remove(currentLevel, sourceId);
+
+        if (refreshAffectedReceivers) {
+            CISignalSourceTypes.continuousSignalUpdateService().remove(currentLevel, sourceId);
+        } else {
+            CISignalSourceTypes.continuousSignalUpdateService().removeWithoutRefresh(currentLevel, sourceId);
+        }
+        sourceRegistered = false;
     }
 
     private static int nextOption(int[] options, int currentValue) {

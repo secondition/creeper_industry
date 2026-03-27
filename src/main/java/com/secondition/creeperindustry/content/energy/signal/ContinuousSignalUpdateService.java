@@ -40,6 +40,10 @@ public class ContinuousSignalUpdateService {
                 .ifPresent(source -> refreshAffectedReceivers(level, source));
     }
 
+    public void removeWithoutRefresh(Level level, UUID sourceId) {
+        repository.remove(level.dimension(), sourceId);
+    }
+
     public void refreshAllReceivers(Level level) {
         refreshReceivers(level, receiverIndex.getAll(level.dimension()));
     }
