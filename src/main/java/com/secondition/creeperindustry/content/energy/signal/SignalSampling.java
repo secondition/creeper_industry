@@ -17,9 +17,6 @@ final class SignalSampling {
             return effectiveAmplitude;
         }
         int half = period / 2;
-        if ((period & 1) == 1 && phase == period - 1) {
-            return 0;
-        }
         return phase < half ? effectiveAmplitude : -effectiveAmplitude;
     }
 }

@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 
 public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
     private static final int[] AMPLITUDE_OPTIONS = {4, 8, 12, 16};
-    private static final int[] PERIOD_OPTIONS = {2, 3, 4, 5};
+    private static final int[] PERIOD_OPTIONS = {2, 4, 6, 8};
 
     private UUID sourceId = UUID.randomUUID();
     private int amplitude = AMPLITUDE_OPTIONS[0];
@@ -93,7 +93,7 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
                 currentLevel.dimension(),
                 Vec3.atCenterOf(worldPosition),
                 currentLevel.getGameTime(),
-                new SignalDefinition(amplitude, periodTicks, 0, SignalWaveform.SQUARE)
+                new SignalDefinition(amplitude, periodTicks, computePhaseTicks(periodTicks), SignalWaveform.SQUARE)
         );
         CISignalSourceTypes.continuousSignalUpdateService().upsert(currentLevel, source);
         sourceRegistered = true;
@@ -130,5 +130,14 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
             }
         }
         return fallback;
+    }
+
+    private int computePhaseTicks(int periodTicks) {
+        int hash = 17;
+        hash = 31 * hash + worldPosition.getX();
+        hash = 31 * hash + worldPosition.getY();
+        hash = 31 * hash + worldPosition.getZ();
+        hash = 31 * hash + sourceId.hashCode();
+        return Math.floorMod(hash, periodTicks);
     }
 }

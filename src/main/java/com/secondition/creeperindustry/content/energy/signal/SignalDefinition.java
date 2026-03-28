@@ -11,5 +11,8 @@ public record SignalDefinition(int amplitude, int periodTicks, int phaseTicks, S
         if (phaseTicks < 0) {
             throw new IllegalArgumentException("Signal phase cannot be negative");
         }
+        if (phaseTicks >= periodTicks) {
+            throw new IllegalArgumentException("Signal phase must be smaller than period");
+        }
     }
 }
