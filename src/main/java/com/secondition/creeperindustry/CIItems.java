@@ -2,6 +2,7 @@ package com.secondition.creeperindustry;
 
 import java.util.function.Supplier;
 
+import com.secondition.creeperindustry.content.energy.transmission.BlastproofDuctInterfaceItem;
 import com.secondition.creeperindustry.content.logistics.rocket.GuidedFireworkRocketItem;
 
 import net.minecraft.world.item.BlockItem;
@@ -16,6 +17,7 @@ public class CIItems {
     public static final Supplier<Item> GUIDED_FIREWORK_ROCKET = ITEMS.register("guided_firework_rocket", GuidedFireworkRocketItem::new);
 
     public static final Supplier<Item> BLASTPROOF_DUCT = ITEMS.register("blastproof_duct", () -> new BlockItem(CIBlocks.BLASTPROOF_DUCT.get(), new Item.Properties()));
+    public static final Supplier<Item> BLASTPROOF_DUCT_INTERFACE = ITEMS.register("blastproof_duct_interface", () -> new BlastproofDuctInterfaceItem(new Item.Properties()));
     public static final Supplier<Item> BLASTPROOF_FRAME = ITEMS.register("blastproof_frame", () -> new BlockItem(CIBlocks.BLASTPROOF_FRAME.get(), new Item.Properties()));
     public static final Supplier<Item> BLASTPROOF_GLASS = ITEMS.register("blastproof_glass", () -> new BlockItem(CIBlocks.BLASTPROOF_GLASS.get(), new Item.Properties()));
     public static final Supplier<Item> CONTINUOUS_SIGNAL_EMITTER = ITEMS.register("continuous_signal_emitter", () -> new BlockItem(CIBlocks.CONTINUOUS_SIGNAL_EMITTER.get(), new Item.Properties()));

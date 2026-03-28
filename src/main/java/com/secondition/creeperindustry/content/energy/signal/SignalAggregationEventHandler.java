@@ -29,5 +29,9 @@ public final class SignalAggregationEventHandler {
                 CISignalSourceTypes.transientSignalImpactTracker()
                         .popAffectedTargetsThroughTick(event.getLevel().dimension(), staleThroughTick)
         );
+        CISignalSourceTypes.continuousSignalUpdateService().refreshReceivers(
+                event.getLevel(),
+                CISignalSourceTypes.deferredSignalRefreshQueue().drain(event.getLevel().dimension())
+        );
     }
 }

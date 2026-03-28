@@ -57,6 +57,59 @@
         "model": "creeper_industry:block/blastproof_duct_arm",
         "x": 90
       }
+    },
+    {
+      "when": {
+        "interface_north": "true"
+      },
+      "apply": {
+        "model": "creeper_industry:block/blastproof_duct_interface_attachment"
+      }
+    },
+    {
+      "when": {
+        "interface_south": "true"
+      },
+      "apply": {
+        "model": "creeper_industry:block/blastproof_duct_interface_attachment",
+        "y": 180
+      }
+    },
+    {
+      "when": {
+        "interface_east": "true"
+      },
+      "apply": {
+        "model": "creeper_industry:block/blastproof_duct_interface_attachment",
+        "y": 90
+      }
+    },
+    {
+      "when": {
+        "interface_west": "true"
+      },
+      "apply": {
+        "model": "creeper_industry:block/blastproof_duct_interface_attachment",
+        "y": 270
+      }
+    },
+    {
+      "when": {
+        "interface_up": "true"
+      },
+      "apply": {
+        "model": "creeper_industry:block/blastproof_duct_interface_attachment",
+        "x": 270
+      }
+    },
+    {
+      "when": {
+        "interface_down": "true"
+      },
+      "apply": {
+        "model": "creeper_industry:block/blastproof_duct_interface_attachment",
+        "x": 90
+      }
     }
   ]
 }

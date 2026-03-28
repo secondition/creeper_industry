@@ -3,6 +3,7 @@
   "item.creeper_industry.catnip": "Catnip",
   "item.creeper_industry.guided_firework_rocket": "Guided Firework Rocket",
   "block.creeper_industry.blastproof_duct": "Blastproof Duct",
+  "item.creeper_industry.blastproof_duct_interface": "Blastproof Duct Interface",
   "block.creeper_industry.blastproof_frame": "Blastproof Frame",
   "block.creeper_industry.blastproof_glass": "Blastproof Glass",
   "block.creeper_industry.continuous_signal_emitter": "Continuous Signal Emitter",
@@ -15,5 +16,5 @@
   "block.creeper_industry.rocket_launcher": "Rocket Launcher",
   "message.creeper_industry.continuous_signal_emitter.amplitude": "Emitter amplitude=%s, period=%s",
   "message.creeper_industry.continuous_signal_emitter.period": "Emitter period=%s, amplitude=%s",
-  "message.creeper_industry.signal_update_detector.reading": "Signal current=%s, instantaneous=%s, last_non_zero=%s"
+  "message.creeper_industry.signal_update_detector.reading": "Signal equivalent_value=%s, instantaneous=%s, last_non_zero=%s"
 }

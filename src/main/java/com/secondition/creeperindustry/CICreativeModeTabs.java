@@ -18,6 +18,7 @@ public class CICreativeModeTabs {
                 output.accept(CIItems.CATNIP.get());
                 output.accept(CIItems.GUIDED_FIREWORK_ROCKET.get());
                 output.accept(CIBlocks.BLASTPROOF_DUCT.get());
+                output.accept(CIItems.BLASTPROOF_DUCT_INTERFACE.get());
                 output.accept(CIBlocks.BLASTPROOF_FRAME.get());
                 output.accept(CIBlocks.BLASTPROOF_GLASS.get());
                 output.accept(CIBlocks.CONTINUOUS_SIGNAL_EMITTER.get());

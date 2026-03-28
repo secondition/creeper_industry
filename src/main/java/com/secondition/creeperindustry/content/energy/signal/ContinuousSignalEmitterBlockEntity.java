@@ -15,7 +15,7 @@ import net.minecraft.world.phys.Vec3;
 
 public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
     private static final int[] AMPLITUDE_OPTIONS = {4, 8, 12, 16};
-    private static final int[] PERIOD_OPTIONS = {1, 2, 3, 4, 5};
+    private static final int[] PERIOD_OPTIONS = {2, 3, 4, 5};
 
     private UUID sourceId = UUID.randomUUID();
     private int amplitude = AMPLITUDE_OPTIONS[0];
