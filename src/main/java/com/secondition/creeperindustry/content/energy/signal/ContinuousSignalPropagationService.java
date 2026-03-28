@@ -23,7 +23,7 @@ public class ContinuousSignalPropagationService {
     public List<DeliveredSignal> collectContributions(Level level, BlockPos targetPos, long gameTime) {
         List<DeliveredSignal> contributions = new ArrayList<>();
         for (ContinuousSignalSource source : repository.getActiveSources(level.dimension())) {
-            SignalReach reach = SignalReachEvaluator.evaluate(source, targetPos);
+            SignalReach reach = SignalReachEvaluator.evaluate(level, source, targetPos);
             if (reach != null) {
                 contributions.add(new DeliveredSignal(
                         source,

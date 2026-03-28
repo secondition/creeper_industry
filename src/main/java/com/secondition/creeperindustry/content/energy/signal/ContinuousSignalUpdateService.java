@@ -28,10 +28,10 @@ public class ContinuousSignalUpdateService {
     public void upsert(Level level, ContinuousSignalSource source) {
         Collection<BlockPos> receiverPositions = new LinkedHashSet<>();
         repository.get(level.dimension(), source.id())
-                .ifPresent(previousSource -> receiverPositions.addAll(receiverSelector.getPotentialTargets(level.dimension(), previousSource)));
+                .ifPresent(previousSource -> receiverPositions.addAll(receiverSelector.getPotentialTargets(level, previousSource)));
 
         repository.put(source);
-        receiverPositions.addAll(receiverSelector.getPotentialTargets(level.dimension(), source));
+        receiverPositions.addAll(receiverSelector.getPotentialTargets(level, source));
         refreshReceivers(level, receiverPositions);
     }
 
@@ -53,7 +53,7 @@ public class ContinuousSignalUpdateService {
     }
 
     private void refreshAffectedReceivers(Level level, ContinuousSignalSource source) {
-        Collection<BlockPos> receiverPositions = receiverSelector.getPotentialTargets(level.dimension(), source);
+        Collection<BlockPos> receiverPositions = receiverSelector.getPotentialTargets(level, source);
         refreshReceivers(level, receiverPositions);
     }
 }

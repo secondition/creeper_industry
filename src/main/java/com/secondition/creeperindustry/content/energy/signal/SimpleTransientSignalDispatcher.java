@@ -9,8 +9,9 @@ public class SimpleTransientSignalDispatcher implements TransientSignalDispatche
     @Override
     public void dispatch(Level level, SignalSource source) {
         List<SignalReach> reachableTargets = SignalReachEvaluator.findReachableTargets(
+                level,
                 source,
-                CISignalSourceTypes.signalReceiverSelector().getPotentialTargets(level.dimension(), source)
+                CISignalSourceTypes.signalReceiverSelector().getPotentialTargets(level, source)
         );
         for (SignalReach reach : reachableTargets) {
             CISignalSourceTypes.signalAggregationService().submitContribution(
