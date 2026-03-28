@@ -13,8 +13,11 @@ final class SignalSampling {
     }
 
     private static int sampleSquare(int period, int phase, int effectiveAmplitude) {
+        if (period == 1) {
+            return effectiveAmplitude;
+        }
         int half = period / 2;
-        if ((period & 1) == 1 && phase == half) {
+        if ((period & 1) == 1 && phase == period - 1) {
             return 0;
         }
         return phase < half ? effectiveAmplitude : -effectiveAmplitude;

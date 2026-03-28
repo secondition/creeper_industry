@@ -21,6 +21,8 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
 
     @Override
     public void receiveSignal(AggregatedSignal signal) {
+        boolean changed = currentAmplitude != signal.signal().amplitude()
+                || currentInstantaneousValue != signal.instantaneousValue();
         currentAmplitude = signal.signal().amplitude();
         currentInstantaneousValue = signal.instantaneousValue();
         if (currentAmplitude > 0) {
@@ -31,16 +33,17 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
             BlockState state = getBlockState();
             if (!state.getValue(SignalUpdateDetectorBlock.TRIGGERED)) {
                 level.setBlock(worldPosition, state.setValue(SignalUpdateDetectorBlock.TRIGGERED, true), 3);
-            } else {
-                level.sendBlockUpdated(worldPosition, state, state, 3);
             }
         }
 
-        setChanged();
+        if (changed) {
+            setChanged();
+        }
     }
 
     @Override
     public void clearSignal() {
+        boolean changed = currentAmplitude != 0 || currentInstantaneousValue != 0;
         currentAmplitude = 0;
         currentInstantaneousValue = 0;
 
@@ -48,12 +51,12 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
             BlockState state = getBlockState();
             if (state.getValue(SignalUpdateDetectorBlock.TRIGGERED)) {
                 level.setBlock(worldPosition, state.setValue(SignalUpdateDetectorBlock.TRIGGERED, false), 3);
-            } else {
-                level.sendBlockUpdated(worldPosition, state, state, 3);
             }
         }
 
-        setChanged();
+        if (changed) {
+            setChanged();
+        }
     }
 
     public int getCurrentAmplitude() {
@@ -126,5 +129,12 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
         if (!CISignalSourceTypes.continuousSignalSourceRepository().getActiveSources(currentLevel.dimension()).isEmpty()) {
             CISignalSourceTypes.unifiedSignalRefreshService().refreshTarget(currentLevel, worldPosition);
         }
+    }
+
+    public static void serverTick(Level level, BlockPos pos, BlockState state, SignalUpdateDetectorBlockEntity detector) {
+        if (CISignalSourceTypes.continuousSignalSourceRepository().getActiveSources(level.dimension()).isEmpty()) {
+            return;
+        }
+        CISignalSourceTypes.unifiedSignalRefreshService().refreshTarget(level, pos, level.getGameTime());
     }
 }

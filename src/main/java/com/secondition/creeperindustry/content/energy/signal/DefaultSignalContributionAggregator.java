@@ -2,12 +2,15 @@ package com.secondition.creeperindustry.content.energy.signal;
 
 import java.util.Collection;
 
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
 public class DefaultSignalContributionAggregator implements SignalContributionAggregator {
     @Override
+    @Nullable
     public AggregatedSignal aggregate(ResourceKey<Level> level, BlockPos targetPos, long gameTime, Collection<DeliveredSignal> contributions) {
         if (contributions.isEmpty()) {
             throw new IllegalArgumentException("Cannot aggregate an empty contribution set");
@@ -50,11 +53,15 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
             }
         }
 
-        int averageAmplitude = Math.toIntExact(absoluteValueSum / commonPeriod);
+        int averageAmplitude = Math.toIntExact((absoluteValueSum + commonPeriod - 1L) / commonPeriod);
+        if (averageAmplitude <= 0) {
+            return null;
+        }
         SignalDefinition signal = new SignalDefinition(averageAmplitude, commonPeriod, 0, SignalWaveform.SQUARE);
         return new AggregatedSignal(level, targetPos, gameTime, signal, currentTickValue, contributions.size(), strongestCost == Integer.MAX_VALUE ? 0 : strongestCost);
     }
 
+    @Nullable
     private AggregatedSignal aggregateCurrentTick(ResourceKey<Level> level, BlockPos targetPos, long gameTime, Collection<DeliveredSignal> contributions) {
         int summedValue = 0;
         int strongestCost = Integer.MAX_VALUE;
@@ -66,7 +73,12 @@ public class DefaultSignalContributionAggregator implements SignalContributionAg
             }
         }
 
-        SignalDefinition signal = new SignalDefinition(Math.abs(summedValue), 1, 0, SignalWaveform.SQUARE);
+        int amplitude = Math.abs(summedValue);
+        if (amplitude <= 0) {
+            return null;
+        }
+
+        SignalDefinition signal = new SignalDefinition(amplitude, 1, 0, SignalWaveform.SQUARE);
         return new AggregatedSignal(level, targetPos, gameTime, signal, summedValue, contributions.size(), strongestCost == Integer.MAX_VALUE ? 0 : strongestCost);
     }
 

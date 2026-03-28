@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.jetbrains.annotations.Nullable;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -48,7 +50,11 @@ public class ContinuousSignalPropagationService {
             return;
         }
 
-        AggregatedSignal aggregatedSignal = aggregator.aggregate(level.dimension(), targetPos, level.getGameTime(), contributions);
+        @Nullable AggregatedSignal aggregatedSignal = aggregator.aggregate(level.dimension(), targetPos, level.getGameTime(), contributions);
+        if (aggregatedSignal == null) {
+            receiver.clearSignal();
+            return;
+        }
         receiver.receiveSignal(aggregatedSignal);
     }
 

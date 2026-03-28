@@ -1,6 +1,7 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
 import com.mojang.serialization.MapCodec;
+import com.secondition.creeperindustry.CIBlockEntityTypes;
 import com.secondition.creeperindustry.CISignalSourceTypes;
 import com.secondition.creeperindustry.foundation.blockEntity.SimpleEntityBlock;
 
@@ -13,6 +14,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -42,6 +45,14 @@ public class SignalUpdateDetectorBlock extends SimpleEntityBlock implements Enti
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new SignalUpdateDetectorBlockEntity(pos, state);
+    }
+
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+        if (level.isClientSide()) {
+            return null;
+        }
+        return createTickerHelper(blockEntityType, CIBlockEntityTypes.SIGNAL_UPDATE_DETECTOR.get(), SignalUpdateDetectorBlockEntity::serverTick);
     }
 
     @Override
