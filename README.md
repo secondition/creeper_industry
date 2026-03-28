@@ -1,127 +1,113 @@
 # Creeper Industry
 
-`Creeper Industry` 是一个基于 **NeoForge 1.21.1** 的 Minecraft 模组，围绕“苦力怕、爆炸、信号工程与危险工业化”展开设计。
+`Creeper Industry` 是一个基于 **NeoForge 1.21.1** 的 Minecraft 模组，核心主题是“苦力怕、爆炸、信号工程与危险工业化”。
 
-## 文档导航
+项目当前已经有可运行原型，重点不在传统的“发电 -> 输电 -> 用电”，而在一套以“信号”为核心媒介的工业系统：
 
-- 仓库首页概览：当前文件
-- 设计草案与规则沉淀：[docs/design_draft.md](docs/design_draft.md)
+- 爆炸事件可以直接产生脉冲信号
+- 机器可以产生连续信号
+- 信号会在空气、方块和导管中传播、衰减、聚合
+- 机器读取的是目标位置上的最终聚合结果
 
-## 项目定位
+## 文档
 
-这个模组不打算把工业化简单做成“发电 -> 输电 -> 用电”。
+- 设计草案：[docs/design_draft.md](docs/design_draft.md)
 
-当前设计方向更接近：
+## 当前重点系统
 
-- 以爆炸事件作为早期脉冲信号来源
-- 以机器产生的连续信号作为中后期扩展
-- 让方块、机器和传输介质围绕“信号传播与聚合”协同工作
-- 把物流、生产和自动化都建立在这套信号系统之上
+### 信号系统
 
-## 当前状态
+当前仓库里已经实现了信号系统的基础骨架：
 
-目前仓库已经进入可运行原型阶段，内容大致分成两类。
+- 爆炸脉冲信号
+- 连续信号源与更新链
+- 接收端刷新与局部重算
+- 检测器调试显示
+- 导管网络接入传播计算
 
-### 已经有实际代码支撑的部分
+信号的关键概念：
 
-- 爆炸脉冲信号的基础传播链路
-- 连续信号源的数据结构与更新流程
-- 信号接收端索引与统一刷新逻辑
-- 多个信号在目标点的聚合/读取框架
-- `Continuous Signal Emitter`：可产生连续信号的调试方块
-- `Signal Update Detector`：可显示当前信号读数的调试/验证方块
-- 防爆导管、防爆框架、防爆玻璃等基础内容注册
+- 幅值：信号强度
+- 周期：离散 tick 周期
+- 波形：当前为方波
+- 相位：决定当前 tick 采样结果
 
-### 已注册但仍偏占位的部分
+### 导管系统
 
-- `Precision Dropper`
-- `Rocket Launcher`
-- `Guided Firework Rocket`
-- `3D Printer`
-- `Botanical / Zoological / Monster Biosphere`
+导管不是六面漏风的通用信号方块，而是“内部无损传输网络”：
 
-这些内容已经有注册、方块实体或菜单结构，但大多还不是完整玩法实现。
+- 信号在普通介质中按曼哈顿距离衰减
+- 信号在导管网络内部无损传播
+- 导管只能通过“接口”与外界交换信号
+- 接口不是独立方块，而是安装在导管六个面的同格挂件
 
-## 已有内容概览
+当前规则下：
 
-当前创意标签页中已经包含以下主要内容：
+- 没有接口的导管，不会和空气或普通方块直接连通信号
+- 只有装了接口的那一面，才能作为导管的输入/输出面
+- 接口增删会触发导管网络缓存刷新与相关接收端重算
 
-- `Catnip`
-- `Guided Firework Rocket`
-- `Blastproof Duct`
-- `Blastproof Frame`
-- `Blastproof Glass`
-- `Continuous Signal Emitter`
-- `Signal Update Detector`
-- `Precision Dropper`
-- `Botanical Biosphere`
-- `Zoological Biosphere`
-- `Monster Biosphere`
-- `3D Printer`
-- `Rocket Launcher`
+## 当前连续信号规则
 
-## 信号系统概念
+连续信号当前采用离散方波采样，支持周期 `2..5 tick`。
 
-这是当前仓库最重要、也最值得关注的部分。
+为了避免奇数周期下正负半周期不对称，当前采样规则是：
 
-### 核心思路
+- 偶数周期：前半周期为正，后半周期为负
+- 奇数周期：中间 1 tick 为空值 `0`
 
-- 系统以“信号”作为机器交互媒介，而不是 FE 一类通用能量
-- 早期信号可来自爆炸事件
-- 后续机器可持续产生离散化的连续信号
-- 接收端读取的是目标位置处聚合后的最终结果
+例子：
 
-### 当前实现特征
+- `2 tick`: `+A, -A`
+- `3 tick`: `+A, 0, -A`
+- `4 tick`: `+A, +A, -A, -A`
+- `5 tick`: `+A, +A, 0, -A, -A`
 
-- 信号具备振幅、周期等定义
-- 连续信号源会被注册到仓库中，并在变化时触发更新
-- 接收端不会盲目每 tick 全量轮询，而是走变化驱动刷新
-- 检测器方块可以观察当前聚合信号值，便于调试和验证
+这条规则的目的：
 
-如果你要继续开发这个仓库，建议先阅读 `content/energy/signal` 目录，再结合 [docs/design_draft.md](docs/design_draft.md) 查看原始设计约束。
+- 消除奇数周期方波的直流偏置
+- 保留当前“先做带符号叠加，再取绝对值平均”的聚合逻辑
+- 让连续信号与脉冲信号在同 tick 叠加时更直观
 
-## 技术栈
+## 检测器读数
+
+`Signal Update Detector` 当前会显示三类值：
+
+- `equivalent_value`：等效值，表示聚合结果的等效强度
+- `instantaneous`：当前 tick 的瞬时值
+- `last_non_zero`：最近一次非零等效值
+
+其中：
+
+- 纯连续信号时，等效值来自公共周期内叠加波形绝对值的平均
+- 若当前 tick 混入脉冲信号，则该 tick 按瞬时叠加结果结算
+
+## 开发环境
 
 - Minecraft `1.21.1`
 - NeoForge `21.1.219`
 - Java `21`
 - Gradle Wrapper
-- Parchment Mappings `2024.11.17`
 
-## 本地开发
-
-### 环境要求
-
-- JDK 21
-- 能正常运行 Gradle Wrapper
-
-### 常用命令
-
-启动客户端：
+## 常用命令
 
 ```powershell
 .\gradlew runClient
 ```
 
-启动服务端：
-
 ```powershell
 .\gradlew runServer
 ```
-
-运行数据生成：
 
 ```powershell
 .\gradlew runData
 ```
 
-构建模组：
-
 ```powershell
 .\gradlew build
 ```
 
-## 项目结构
+## 代码目录
 
 ```text
 src/main/java/com/secondition/creeperindustry
@@ -135,23 +121,8 @@ src/main/java/com/secondition/creeperindustry
 └─ CreeperIndustry.java
 ```
 
-各目录职责大致如下：
+重点目录：
 
-- `content/energy/signal`：信号源、传播、聚合、接收与刷新机制
-- `content/energy/transmission`：防爆导管及相关传输方块
-- `content/logistics`：火箭、发射器、定点投掷等物流内容
-- `content/production`：生态球、3D 打印机等生产内容
-- `foundation`：基础方块/菜单封装
-
-## 开发建议
-
-如果你准备继续迭代这个项目，优先级建议如下：
-
-1. 完成连续信号系统与导管网络的整合
-2. 把调试方块扩展成真正参与玩法的机器
-3. 为物流与生产机器补齐实际业务逻辑，而不只是方块实体占位
-4. 增加配方、数据生成、本地化与测试验证内容
-
-## 许可证
-
-本项目当前在 `gradle.properties` 中声明为 `MIT`。
+- `content/energy/signal`：信号源、传播、聚合、刷新与接收
+- `content/energy/transmission`：导管、接口与导管网络
+- `docs/design_draft.md`：当前规则、约束与设计取舍
