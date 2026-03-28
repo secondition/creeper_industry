@@ -19,6 +19,8 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
+import java.util.LinkedHashSet;
+
 public class BlastproofDuctBlock extends Block {
     public static final MapCodec<BlastproofDuctBlock> CODEC = simpleCodec(BlastproofDuctBlock::new);
     public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
@@ -51,16 +53,36 @@ public class BlastproofDuctBlock extends Block {
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!level.isClientSide() && !oldState.is(state.getBlock())) {
-            refreshSignalNetwork(level);
+            refreshAffectedReceivers(level, CISignalSourceTypes.ductNetworkManager().getAffectedReceiversAfterPlacement(
+                    level,
+                    pos,
+                    CISignalSourceTypes.signalReceiverIndex(),
+                    CISignalSourceTypes.continuousSignalSourceRepository()
+            ));
         }
     }
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
+        LinkedHashSet<BlockPos> affectedReceivers = new LinkedHashSet<>();
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
-            refreshSignalNetwork(level);
+            affectedReceivers.addAll(CISignalSourceTypes.ductNetworkManager().getAffectedReceiversBeforeRemoval(
+                    level,
+                    pos,
+                    CISignalSourceTypes.signalReceiverIndex(),
+                    CISignalSourceTypes.continuousSignalSourceRepository()
+            ));
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
+        if (!level.isClientSide() && !state.is(newState.getBlock())) {
+            affectedReceivers.addAll(CISignalSourceTypes.ductNetworkManager().getAffectedReceiversAfterRemoval(
+                    level,
+                    pos,
+                    CISignalSourceTypes.signalReceiverIndex(),
+                    CISignalSourceTypes.continuousSignalSourceRepository()
+            ));
+            refreshAffectedReceivers(level, affectedReceivers);
+        }
     }
 
     @Override
@@ -106,8 +128,10 @@ public class BlastproofDuctBlock extends Block {
         return buildShape(state);
     }
 
-    private void refreshSignalNetwork(Level level) {
-        CISignalSourceTypes.continuousSignalUpdateService().refreshAllReceivers(level);
+    private void refreshAffectedReceivers(Level level, java.util.Collection<BlockPos> receiverPositions) {
+        if (!receiverPositions.isEmpty()) {
+            CISignalSourceTypes.continuousSignalUpdateService().refreshReceivers(level, receiverPositions);
+        }
     }
 
     private static BooleanProperty propertyFor(Direction direction) {

@@ -2,6 +2,8 @@ package com.secondition.creeperindustry.content.energy.signal;
 
 import java.util.Collection;
 
+import com.secondition.creeperindustry.CISignalSourceTypes;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
@@ -18,14 +20,12 @@ public class SignalReceiverSelector {
             return java.util.List.of();
         }
 
-        if (DuctPropagationCostResolver.hasNearbyDuctEntrance(level, source.position(), maxDistance)) {
-            return receiverIndex.getAll(level.dimension());
-        }
-
-        return receiverIndex.getWithinManhattanDistance(
-                level.dimension(),
-                BlockPos.containing(source.position()),
+        return CISignalSourceTypes.ductNetworkManager().getPotentialTargets(
+                level,
+                source.position(),
                 maxDistance
+                ,
+                receiverIndex
         );
     }
 }

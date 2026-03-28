@@ -9,6 +9,7 @@ import com.secondition.creeperindustry.content.energy.signal.InMemoryContinuousS
 import com.secondition.creeperindustry.content.energy.signal.InMemorySignalReceiverIndex;
 import com.secondition.creeperindustry.content.energy.signal.InMemoryTransientSignalImpactTracker;
 import com.secondition.creeperindustry.content.energy.signal.DefaultSignalContributionAggregator;
+import com.secondition.creeperindustry.content.energy.signal.DuctNetworkManager;
 import com.secondition.creeperindustry.content.energy.signal.InMemorySignalAggregationService;
 import com.secondition.creeperindustry.content.energy.signal.MachineSignalSource;
 import com.secondition.creeperindustry.content.energy.signal.SignalSourceRepository;
@@ -26,6 +27,7 @@ public class CISignalSourceTypes {
     private static final ContinuousSignalSourceRepository CONTINUOUS_SOURCE_REPOSITORY = new InMemoryContinuousSignalSourceRepository();
     private static final SignalReceiverIndex SIGNAL_RECEIVER_INDEX = new InMemorySignalReceiverIndex();
     private static final SignalReceiverSelector SIGNAL_RECEIVER_SELECTOR = new SignalReceiverSelector(SIGNAL_RECEIVER_INDEX);
+    private static final DuctNetworkManager DUCT_NETWORK_MANAGER = new DuctNetworkManager();
     private static final TransientSignalImpactTracker TRANSIENT_SIGNAL_IMPACT_TRACKER = new InMemoryTransientSignalImpactTracker();
     private static final DefaultSignalContributionAggregator SIGNAL_CONTRIBUTION_AGGREGATOR = new DefaultSignalContributionAggregator();
     private static final SignalAggregationService SIGNAL_AGGREGATION_SERVICE = new InMemorySignalAggregationService();
@@ -67,6 +69,10 @@ public class CISignalSourceTypes {
 
     public static SignalReceiverSelector signalReceiverSelector() {
         return SIGNAL_RECEIVER_SELECTOR;
+    }
+
+    public static DuctNetworkManager ductNetworkManager() {
+        return DUCT_NETWORK_MANAGER;
     }
 
     public static TransientSignalImpactTracker transientSignalImpactTracker() {
