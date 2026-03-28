@@ -20,6 +20,8 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
     private UUID sourceId = UUID.randomUUID();
     private int amplitude = AMPLITUDE_OPTIONS[0];
     private int periodTicks = PERIOD_OPTIONS[0];
+    private int phaseTicks;
+    private boolean phaseInitialized;
     private boolean sourceRegistered;
 
     public ContinuousSignalEmitterBlockEntity(BlockPos pos, BlockState blockState) {
@@ -59,7 +61,11 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
     }
 
     public void cyclePeriod() {
-        periodTicks = nextOption(PERIOD_OPTIONS, periodTicks);
+        int previousPeriod = periodTicks;
+        int nextPeriod = nextOption(PERIOD_OPTIONS, periodTicks);
+        ensurePhaseInitialized();
+        phaseTicks = remapPhaseTicks(phaseTicks, previousPeriod, nextPeriod);
+        periodTicks = nextPeriod;
         pushSignalUpdate();
         setChanged();
     }
@@ -70,6 +76,9 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
         tag.putUUID("source_id", sourceId);
         tag.putInt("amplitude", amplitude);
         tag.putInt("period_ticks", periodTicks);
+        if (phaseInitialized) {
+            tag.putInt("phase_ticks", phaseTicks);
+        }
     }
 
     @Override
@@ -80,6 +89,13 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
         }
         amplitude = readOption(tag, "amplitude", AMPLITUDE_OPTIONS, AMPLITUDE_OPTIONS[0]);
         periodTicks = readOption(tag, "period_ticks", PERIOD_OPTIONS, PERIOD_OPTIONS[0]);
+        if (tag.contains("phase_ticks")) {
+            phaseTicks = Math.floorMod(tag.getInt("phase_ticks"), periodTicks);
+            phaseInitialized = true;
+        } else {
+            phaseTicks = 0;
+            phaseInitialized = false;
+        }
     }
 
     private void pushSignalUpdate() {
@@ -87,13 +103,14 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
         if (currentLevel == null || currentLevel.isClientSide()) {
             return;
         }
+        ensurePhaseInitialized();
 
         MachineSignalSource source = new MachineSignalSource(
                 sourceId,
                 currentLevel.dimension(),
                 Vec3.atCenterOf(worldPosition),
                 currentLevel.getGameTime(),
-                new SignalDefinition(amplitude, periodTicks, computePhaseTicks(periodTicks), SignalWaveform.SQUARE)
+                new SignalDefinition(amplitude, periodTicks, phaseTicks, SignalWaveform.SQUARE)
         );
         CISignalSourceTypes.continuousSignalUpdateService().upsert(currentLevel, source);
         sourceRegistered = true;
@@ -132,12 +149,18 @@ public class ContinuousSignalEmitterBlockEntity extends BlockEntity {
         return fallback;
     }
 
-    private int computePhaseTicks(int periodTicks) {
-        int hash = 17;
-        hash = 31 * hash + worldPosition.getX();
-        hash = 31 * hash + worldPosition.getY();
-        hash = 31 * hash + worldPosition.getZ();
-        hash = 31 * hash + sourceId.hashCode();
-        return Math.floorMod(hash, periodTicks);
+    private void ensurePhaseInitialized() {
+        if (phaseInitialized || level == null) {
+            return;
+        }
+        phaseTicks = Math.floorMod((int) level.getGameTime(), periodTicks);
+        phaseInitialized = true;
+    }
+
+    private static int remapPhaseTicks(int currentPhase, int previousPeriod, int nextPeriod) {
+        if (previousPeriod == nextPeriod) {
+            return currentPhase;
+        }
+        return Math.floorMod((int) (((long) currentPhase * nextPeriod) / previousPeriod), nextPeriod);
     }
 }
