@@ -1,18 +1,21 @@
 package com.secondition.creeperindustry;
 
+import com.secondition.creeperindustry.content.production.biosphere.BiosphereScreen;
+
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 @Mod(value = CreeperIndustry.MODID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = CreeperIndustry.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = CreeperIndustry.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public class CreeperIndustryClient {
     public CreeperIndustryClient() {
     }
 
     @SubscribeEvent
-    static void onClientSetup(FMLClientSetupEvent event) {
+    static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
+        event.register(CIMenuTypes.BIOSPHERE.get(), BiosphereScreen::new);
     }
 }

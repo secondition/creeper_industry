@@ -48,12 +48,12 @@ public class BlastproofDuctBlock extends Block {
     private static final VoxelShape WEST_SHAPE = Block.box(0.0D, 5.0D, 5.0D, 5.0D, 11.0D, 11.0D);
     private static final VoxelShape UP_SHAPE = Block.box(5.0D, 11.0D, 5.0D, 11.0D, 16.0D, 11.0D);
     private static final VoxelShape DOWN_SHAPE = Block.box(5.0D, 0.0D, 5.0D, 11.0D, 5.0D, 11.0D);
-    private static final VoxelShape INTERFACE_NORTH_SHAPE = Block.box(4.0D, 4.0D, 0.0D, 12.0D, 12.0D, 4.0D);
-    private static final VoxelShape INTERFACE_SOUTH_SHAPE = Block.box(4.0D, 4.0D, 12.0D, 12.0D, 12.0D, 16.0D);
-    private static final VoxelShape INTERFACE_EAST_SHAPE = Block.box(12.0D, 4.0D, 4.0D, 16.0D, 12.0D, 12.0D);
-    private static final VoxelShape INTERFACE_WEST_SHAPE = Block.box(0.0D, 4.0D, 4.0D, 4.0D, 12.0D, 12.0D);
-    private static final VoxelShape INTERFACE_UP_SHAPE = Block.box(4.0D, 12.0D, 4.0D, 12.0D, 16.0D, 12.0D);
-    private static final VoxelShape INTERFACE_DOWN_SHAPE = Block.box(4.0D, 0.0D, 4.0D, 12.0D, 4.0D, 12.0D);
+    private static final VoxelShape INTERFACE_NORTH_SHAPE = Block.box(4.0D, 4.0D, 0.0D, 12.0D, 12.0D, 5.0D);
+    private static final VoxelShape INTERFACE_SOUTH_SHAPE = Block.box(4.0D, 4.0D, 11.0D, 12.0D, 12.0D, 16.0D);
+    private static final VoxelShape INTERFACE_EAST_SHAPE = Block.box(11.0D, 4.0D, 4.0D, 16.0D, 12.0D, 12.0D);
+    private static final VoxelShape INTERFACE_WEST_SHAPE = Block.box(0.0D, 4.0D, 4.0D, 5.0D, 12.0D, 12.0D);
+    private static final VoxelShape INTERFACE_UP_SHAPE = Block.box(4.0D, 11.0D, 4.0D, 12.0D, 16.0D, 12.0D);
+    private static final VoxelShape INTERFACE_DOWN_SHAPE = Block.box(4.0D, 0.0D, 4.0D, 12.0D, 5.0D, 12.0D);
 
     public BlastproofDuctBlock(BlockBehaviour.Properties properties) {
         super(properties);
