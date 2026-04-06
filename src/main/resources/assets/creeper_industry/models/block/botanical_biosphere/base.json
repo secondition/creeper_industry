@@ -1,0 +1,11 @@
+{
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "0": "creeper_industry:block/botanical_biosphere/middle_texture",
+    "3": "creeper_industry:block/botanical_biosphere/down_texture1",
+    "4": "creeper_industry:block/botanical_biosphere/down_texture3",
+    "5": "creeper_industry:block/botanical_biosphere/down_texture2",
+    "up_0": "creeper_industry:block/botanical_biosphere/up_texture",
+    "particle": "creeper_industry:block/botanical_biosphere/middle_texture"
+  }
+}

@@ -1,9 +1,130 @@
 {
-  "multipart": [
-    {
-      "apply": {
-        "model": "creeper_industry:block/botanical_biosphere"
-      }
+  "variants": {
+    "x_part=0,y_part=0,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y0_z0"
+    },
+    "x_part=0,y_part=0,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y0_z1"
+    },
+    "x_part=0,y_part=1,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/empty"
+    },
+    "x_part=0,y_part=1,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/empty"
+    },
+    "x_part=0,y_part=2,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y2_z0"
+    },
+    "x_part=0,y_part=2,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y2_z1"
+    },
+    "x_part=0,y_part=3,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y3_z0"
+    },
+    "x_part=0,y_part=3,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y3_z1"
+    },
+    "x_part=0,y_part=4,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y4_z0"
+    },
+    "x_part=0,y_part=4,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y4_z1"
+    },
+    "x_part=0,y_part=5,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y5_z0"
+    },
+    "x_part=0,y_part=5,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y5_z1"
+    },
+    "x_part=0,y_part=6,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y6_z0"
+    },
+    "x_part=0,y_part=6,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x0_y6_z1"
+    },
+    "x_part=1,y_part=0,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y0_z0"
+    },
+    "x_part=1,y_part=0,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y0_z1"
+    },
+    "x_part=1,y_part=1,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y1_z0"
+    },
+    "x_part=1,y_part=1,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y1_z1"
+    },
+    "x_part=1,y_part=2,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y2_z0"
+    },
+    "x_part=1,y_part=2,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y2_z1"
+    },
+    "x_part=1,y_part=3,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y3_z0"
+    },
+    "x_part=1,y_part=3,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y3_z1"
+    },
+    "x_part=1,y_part=4,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y4_z0"
+    },
+    "x_part=1,y_part=4,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y4_z1"
+    },
+    "x_part=1,y_part=5,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y5_z0"
+    },
+    "x_part=1,y_part=5,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y5_z1"
+    },
+    "x_part=1,y_part=6,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y6_z0"
+    },
+    "x_part=1,y_part=6,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x1_y6_z1"
+    },
+    "x_part=2,y_part=0,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y0_z0"
+    },
+    "x_part=2,y_part=0,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y0_z1"
+    },
+    "x_part=2,y_part=1,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y1_z0"
+    },
+    "x_part=2,y_part=1,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y1_z1"
+    },
+    "x_part=2,y_part=2,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y2_z0"
+    },
+    "x_part=2,y_part=2,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y2_z1"
+    },
+    "x_part=2,y_part=3,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y3_z0"
+    },
+    "x_part=2,y_part=3,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y3_z1"
+    },
+    "x_part=2,y_part=4,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y4_z0"
+    },
+    "x_part=2,y_part=4,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y4_z1"
+    },
+    "x_part=2,y_part=5,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y5_z0"
+    },
+    "x_part=2,y_part=5,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/part_x2_y5_z1"
+    },
+    "x_part=2,y_part=6,z_part=0": {
+      "model": "creeper_industry:block/botanical_biosphere/empty"
+    },
+    "x_part=2,y_part=6,z_part=1": {
+      "model": "creeper_industry:block/botanical_biosphere/empty"
     }
-  ]
+  }
 }

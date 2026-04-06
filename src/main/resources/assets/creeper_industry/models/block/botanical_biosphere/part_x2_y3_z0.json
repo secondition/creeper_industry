@@ -1,0 +1,83 @@
+{
+  "parent": "creeper_industry:block/botanical_biosphere/base",
+  "elements": [
+    {
+      "name": "solid",
+      "from": [
+        14,
+        2,
+        12
+      ],
+      "to": [
+        16,
+        16,
+        14
+      ],
+      "rotation": {
+        "angle": 0,
+        "axis": "y",
+        "origin": [
+          -8,
+          -16,
+          15
+        ]
+      },
+      "faces": {
+        "north": {
+          "uv": [
+            11,
+            5.5,
+            11.25,
+            7.25
+          ],
+          "texture": "#0"
+        },
+        "east": {
+          "uv": [
+            7.25,
+            11,
+            7.5,
+            12.75
+          ],
+          "texture": "#0"
+        },
+        "south": {
+          "uv": [
+            11,
+            7.25,
+            11.25,
+            9
+          ],
+          "texture": "#0"
+        },
+        "west": {
+          "uv": [
+            7.5,
+            11,
+            7.75,
+            12.75
+          ],
+          "texture": "#0"
+        },
+        "up": {
+          "uv": [
+            13.25,
+            9.5,
+            13,
+            9.25
+          ],
+          "texture": "#0"
+        },
+        "down": {
+          "uv": [
+            9.75,
+            13,
+            9.5,
+            13.25
+          ],
+          "texture": "#0"
+        }
+      }
+    }
+  ]
+}

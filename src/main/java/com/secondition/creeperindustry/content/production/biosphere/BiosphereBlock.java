@@ -31,9 +31,13 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 public abstract class BiosphereBlock extends SimpleEntityBlock {
-    public static final IntegerProperty X_PART = IntegerProperty.create("x_part", 0, 1);
-    public static final IntegerProperty Y_PART = IntegerProperty.create("y_part", 0, 1);
-    public static final IntegerProperty Z_PART = IntegerProperty.create("z_part", 0, 1);
+    public static final int WIDTH_X = 3;
+    public static final int HEIGHT_Y = 7;
+    public static final int DEPTH_Z = 2;
+
+    public static final IntegerProperty X_PART = IntegerProperty.create("x_part", 0, WIDTH_X - 1);
+    public static final IntegerProperty Y_PART = IntegerProperty.create("y_part", 0, HEIGHT_Y - 1);
+    public static final IntegerProperty Z_PART = IntegerProperty.create("z_part", 0, DEPTH_Z - 1);
 
     private static final ThreadLocal<Set<BlockPos>> REMOVING_STRUCTURES = ThreadLocal.withInitial(HashSet::new);
 
@@ -75,9 +79,9 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
             return;
         }
 
-        for (int x = 0; x <= 1; x++) {
-            for (int y = 0; y <= 1; y++) {
-                for (int z = 0; z <= 1; z++) {
+        for (int x = 0; x < WIDTH_X; x++) {
+            for (int y = 0; y < HEIGHT_Y; y++) {
+                for (int z = 0; z < DEPTH_Z; z++) {
                     if (x == 0 && y == 0 && z == 0) {
                         continue;
                     }
@@ -202,9 +206,9 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
 
     private static Iterable<BlockPos> iterateStructure(BlockPos origin) {
         Set<BlockPos> positions = new HashSet<>();
-        for (int x = 0; x <= 1; x++) {
-            for (int y = 0; y <= 1; y++) {
-                for (int z = 0; z <= 1; z++) {
+        for (int x = 0; x < WIDTH_X; x++) {
+            for (int y = 0; y < HEIGHT_Y; y++) {
+                for (int z = 0; z < DEPTH_Z; z++) {
                     positions.add(origin.offset(x, y, z).immutable());
                 }
             }
