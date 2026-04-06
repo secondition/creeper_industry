@@ -9,7 +9,6 @@ import com.secondition.creeperindustry.content.energy.signal.ContinuousSignalEmi
 import com.secondition.creeperindustry.content.energy.signal.SignalUpdateDetectorBlock;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperBlock;
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherBlock;
-import com.secondition.creeperindustry.content.production.biosphere.BiosphereBlock;
 import com.secondition.creeperindustry.content.production.biosphere.BotanicalBiosphereBlock;
 import com.secondition.creeperindustry.content.production.biosphere.MonsterBiosphereBlock;
 import com.secondition.creeperindustry.content.production.biosphere.ZoologicalBiosphereBlock;
@@ -24,6 +23,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class CIBlocks {
     private static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(CreeperIndustry.MODID);
+    private static final int BOTANICAL_BIOSPHERE_GLOW_LEVEL = 12;
 
     public static final Supplier<Block> BLASTPROOF_DUCT = BLOCKS.register("blastproof_duct",
             () -> new BlastproofDuctBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(6.0F, 12.0F).sound(SoundType.METAL)));
@@ -40,7 +40,7 @@ public class CIBlocks {
             () -> new PrecisionDropperBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DISPENSER).strength(3.5F)));
 
     public static final Supplier<Block> BOTANICAL_BIOSPHERE = BLOCKS.register("botanical_biosphere",
-            () -> new BotanicalBiosphereBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).strength(2.5F).sound(SoundType.GLASS)));
+            () -> new BotanicalBiosphereBlock(botanicalBiosphereProperties()));
     public static final Supplier<Block> ZOOLOGICAL_BIOSPHERE = BLOCKS.register("zoological_biosphere",
             () -> new ZoologicalBiosphereBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).strength(2.5F).sound(SoundType.GLASS)));
     public static final Supplier<Block> MONSTER_BIOSPHERE = BLOCKS.register("monster_biosphere",
@@ -50,6 +50,13 @@ public class CIBlocks {
             () -> new ThreeDPrinterBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(4.0F).sound(SoundType.METAL)));
     public static final Supplier<Block> ROCKET_LAUNCHER = BLOCKS.register("rocket_launcher",
             () -> new RocketLauncherBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DISPENSER).strength(4.0F).sound(SoundType.METAL)));
+
+    private static BlockBehaviour.Properties botanicalBiosphereProperties() {
+        return BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
+                .strength(2.5F)
+                .sound(SoundType.GLASS)
+                .lightLevel(state -> BOTANICAL_BIOSPHERE_GLOW_LEVEL);
+    }
 
     public static void register(IEventBus modEventBus) {
         BLOCKS.register(modEventBus);

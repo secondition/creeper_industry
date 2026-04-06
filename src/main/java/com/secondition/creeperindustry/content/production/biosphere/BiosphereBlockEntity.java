@@ -12,6 +12,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.protocol.Packet;
+import net.minecraft.network.protocol.game.ClientGamePacketListener;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Container;
@@ -26,6 +29,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -82,6 +86,14 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
 
     public ContainerData dataAccess() {
         return dataAccess;
+    }
+
+    public ItemStack getDisplayedSapling() {
+        BiosphereBlockEntity controller = getInventoryController();
+        if (controller != this) {
+            return controller.getDisplayedSapling();
+        }
+        return items.get(SAPLING_SLOT);
     }
 
     public BiosphereType getBiosphereType() {
@@ -238,6 +250,24 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         super.saveAdditional(tag, registries);
         if (isControllerPart()) {
             ContainerHelper.saveAllItems(tag, items, registries);
+        }
+    }
+
+    @Override
+    public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
+        return isControllerPart() ? saveWithoutMetadata(registries) : super.getUpdateTag(registries);
+    }
+
+    @Override
+    public Packet<ClientGamePacketListener> getUpdatePacket() {
+        return isControllerPart() ? ClientboundBlockEntityDataPacket.create(this) : super.getUpdatePacket();
+    }
+
+    @Override
+    public void setChanged() {
+        super.setChanged();
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
 

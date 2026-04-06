@@ -1,11 +1,13 @@
 package com.secondition.creeperindustry;
 
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereScreen;
+import com.secondition.creeperindustry.content.production.biosphere.BiosphereBlockEntityRenderer;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 @Mod(value = CreeperIndustry.MODID, dist = Dist.CLIENT)
@@ -17,5 +19,10 @@ public class CreeperIndustryClient {
     @SubscribeEvent
     static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(CIMenuTypes.BIOSPHERE.get(), BiosphereScreen::new);
+    }
+
+    @SubscribeEvent
+    static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerBlockEntityRenderer(CIBlockEntityTypes.BIOSPHERE.get(), BiosphereBlockEntityRenderer::new);
     }
 }
