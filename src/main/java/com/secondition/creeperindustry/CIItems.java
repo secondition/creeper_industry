@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofDuctInterfaceItem;
 import com.secondition.creeperindustry.content.logistics.rocket.GuidedFireworkRocketItem;
+import com.secondition.creeperindustry.content.logistics.storage.StorageDiscItem;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -15,6 +16,7 @@ public class CIItems {
 
     public static final Supplier<Item> CATNIP = ITEMS.register("catnip", () -> new Item(new Item.Properties()));
     public static final Supplier<Item> GUIDED_FIREWORK_ROCKET = ITEMS.register("guided_firework_rocket", GuidedFireworkRocketItem::new);
+    public static final Supplier<Item> STORAGE_DISC = ITEMS.register("storage_disc", () -> new StorageDiscItem(new Item.Properties()));
 
     public static final Supplier<Item> BLASTPROOF_DUCT = ITEMS.register("blastproof_duct", () -> new BlockItem(CIBlocks.BLASTPROOF_DUCT.get(), new Item.Properties()));
     public static final Supplier<Item> BLASTPROOF_DUCT_INTERFACE = ITEMS.register("blastproof_duct_interface", () -> new BlastproofDuctInterfaceItem(new Item.Properties()));
@@ -23,6 +25,7 @@ public class CIItems {
     public static final Supplier<Item> CONTINUOUS_SIGNAL_EMITTER = ITEMS.register("continuous_signal_emitter", () -> new BlockItem(CIBlocks.CONTINUOUS_SIGNAL_EMITTER.get(), new Item.Properties()));
     public static final Supplier<Item> SIGNAL_UPDATE_DETECTOR = ITEMS.register("signal_update_detector", () -> new BlockItem(CIBlocks.SIGNAL_UPDATE_DETECTOR.get(), new Item.Properties()));
     public static final Supplier<Item> PRECISION_DROPPER = ITEMS.register("precision_dropper", () -> new BlockItem(CIBlocks.PRECISION_DROPPER.get(), new Item.Properties()));
+    public static final Supplier<Item> DISC_BURNER = ITEMS.register("disc_burner", () -> new BlockItem(CIBlocks.DISC_BURNER.get(), new Item.Properties()));
     public static final Supplier<Item> BOTANICAL_BIOSPHERE = ITEMS.register("botanical_biosphere", () -> new BlockItem(CIBlocks.BOTANICAL_BIOSPHERE.get(), new Item.Properties()));
     public static final Supplier<Item> ZOOLOGICAL_BIOSPHERE = ITEMS.register("zoological_biosphere", () -> new BlockItem(CIBlocks.ZOOLOGICAL_BIOSPHERE.get(), new Item.Properties()));
     public static final Supplier<Item> MONSTER_BIOSPHERE = ITEMS.register("monster_biosphere", () -> new BlockItem(CIBlocks.MONSTER_BIOSPHERE.get(), new Item.Properties()));

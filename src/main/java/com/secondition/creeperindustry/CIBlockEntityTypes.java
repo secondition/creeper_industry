@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperBlockEntity;
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherBlockEntity;
+import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerBlockEntity;
 import com.secondition.creeperindustry.content.energy.signal.ContinuousSignalEmitterBlockEntity;
 import com.secondition.creeperindustry.content.energy.signal.SignalUpdateDetectorBlockEntity;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereBlockEntity;
@@ -28,6 +29,8 @@ public class CIBlockEntityTypes {
                     CIBlocks.BOTANICAL_BIOSPHERE.get(),
                     CIBlocks.ZOOLOGICAL_BIOSPHERE.get(),
                     CIBlocks.MONSTER_BIOSPHERE.get()).build(null));
+    public static final Supplier<BlockEntityType<DiscBurnerBlockEntity>> DISC_BURNER = BLOCK_ENTITY_TYPES.register("disc_burner",
+            () -> BlockEntityType.Builder.of(DiscBurnerBlockEntity::new, CIBlocks.DISC_BURNER.get()).build(null));
     public static final Supplier<BlockEntityType<ThreeDPrinterBlockEntity>> THREE_D_PRINTER = BLOCK_ENTITY_TYPES.register("three_d_printer",
             () -> BlockEntityType.Builder.of(ThreeDPrinterBlockEntity::new, CIBlocks.THREE_D_PRINTER.get()).build(null));
     public static final Supplier<BlockEntityType<RocketLauncherBlockEntity>> ROCKET_LAUNCHER = BLOCK_ENTITY_TYPES.register("rocket_launcher",

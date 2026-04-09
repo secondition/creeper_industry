@@ -1,5 +1,8 @@
 package com.secondition.creeperindustry;
 
+import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartEntity;
+import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartRenderer;
+import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerScreen;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereScreen;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereBlockEntityRenderer;
 
@@ -19,10 +22,12 @@ public class CreeperIndustryClient {
     @SubscribeEvent
     static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(CIMenuTypes.BIOSPHERE.get(), BiosphereScreen::new);
+        event.register(CIMenuTypes.DISC_BURNER.get(), DiscBurnerScreen::new);
     }
 
     @SubscribeEvent
     static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(CIBlockEntityTypes.BIOSPHERE.get(), BiosphereBlockEntityRenderer::new);
+        event.registerEntityRenderer(CIEntityTypes.STORAGE_DISC_MINECART.get(), StorageDiscMinecartRenderer::new);
     }
 }

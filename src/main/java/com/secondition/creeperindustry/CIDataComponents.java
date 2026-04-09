@@ -1,6 +1,7 @@
 package com.secondition.creeperindustry;
 
 import com.mojang.serialization.Codec;
+import com.secondition.creeperindustry.content.logistics.storage.StorageDiscContents;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponentType;
@@ -18,6 +19,8 @@ public class CIDataComponents {
             builder -> builder.persistent(Codec.INT).networkSynchronized(ByteBufCodecs.VAR_INT));
     public static final DeferredHolder<DataComponentType<?>, DataComponentType<BlockPos>> TARGET_POS = DATA_COMPONENTS.registerComponentType("target_pos",
             builder -> builder.persistent(BlockPos.CODEC).networkSynchronized(BlockPos.STREAM_CODEC));
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<StorageDiscContents>> STORAGE_DISC_CONTENTS = DATA_COMPONENTS.registerComponentType("storage_disc_contents",
+            builder -> builder.persistent(StorageDiscContents.CODEC).networkSynchronized(StorageDiscContents.STREAM_CODEC).cacheEncoding());
 
     public static void register(IEventBus modEventBus) {
         DATA_COMPONENTS.register(modEventBus);

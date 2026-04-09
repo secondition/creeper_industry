@@ -17,6 +17,7 @@ public class CICreativeModeTabs {
             .displayItems((parameters, output) -> {
                 output.accept(CIItems.CATNIP.get());
                 output.accept(CIItems.GUIDED_FIREWORK_ROCKET.get());
+                output.accept(CIItems.STORAGE_DISC.get());
                 output.accept(CIBlocks.BLASTPROOF_DUCT.get());
                 output.accept(CIItems.BLASTPROOF_DUCT_INTERFACE.get());
                 output.accept(CIBlocks.BLASTPROOF_FRAME.get());
@@ -24,6 +25,7 @@ public class CICreativeModeTabs {
                 output.accept(CIBlocks.CONTINUOUS_SIGNAL_EMITTER.get());
                 output.accept(CIBlocks.SIGNAL_UPDATE_DETECTOR.get());
                 output.accept(CIBlocks.PRECISION_DROPPER.get());
+                output.accept(CIBlocks.DISC_BURNER.get());
                 output.accept(CIBlocks.BOTANICAL_BIOSPHERE.get());
                 output.accept(CIBlocks.ZOOLOGICAL_BIOSPHERE.get());
                 output.accept(CIBlocks.MONSTER_BIOSPHERE.get());

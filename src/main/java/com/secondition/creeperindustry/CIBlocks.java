@@ -9,6 +9,7 @@ import com.secondition.creeperindustry.content.energy.signal.ContinuousSignalEmi
 import com.secondition.creeperindustry.content.energy.signal.SignalUpdateDetectorBlock;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperBlock;
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherBlock;
+import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerBlock;
 import com.secondition.creeperindustry.content.production.biosphere.BotanicalBiosphereBlock;
 import com.secondition.creeperindustry.content.production.biosphere.MonsterBiosphereBlock;
 import com.secondition.creeperindustry.content.production.biosphere.ZoologicalBiosphereBlock;
@@ -38,6 +39,8 @@ public class CIBlocks {
 
     public static final Supplier<Block> PRECISION_DROPPER = BLOCKS.register("precision_dropper",
             () -> new PrecisionDropperBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DISPENSER).strength(3.5F)));
+    public static final Supplier<Block> DISC_BURNER = BLOCKS.register("disc_burner",
+            () -> new DiscBurnerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.JUKEBOX).strength(2.5F).sound(SoundType.WOOD)));
 
     public static final Supplier<Block> BOTANICAL_BIOSPHERE = BLOCKS.register("botanical_biosphere",
             () -> new BotanicalBiosphereBlock(botanicalBiosphereProperties()));
