@@ -12,18 +12,26 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class StorageDiscMinecartRenderer extends EntityRenderer<StorageDiscMinecartEntity> {
+    private static final float MODEL_SCALE = 1.35F;
+    private static final float BODY_BASE_HEIGHT = 0.03125F;
+    private static final float TOP_LAYER_OFFSET = 0.03125F;
+    private static final ItemStack GLASS_PANE_STACK = new ItemStack(Items.GLASS_PANE);
+
     private final ItemRenderer itemRenderer;
 
     public StorageDiscMinecartRenderer(EntityRendererProvider.Context context) {
         super(context);
         this.itemRenderer = context.getItemRenderer();
-        this.shadowRadius = 0.35F;
+        this.shadowRadius = 0.0F;
+        this.shadowStrength = 0.0F;
     }
 
     @Override
@@ -56,9 +64,10 @@ public class StorageDiscMinecartRenderer extends EntityRenderer<StorageDiscMinec
             }
         }
 
-        poseStack.translate(0.0F, 0.1F, 0.0F);
-        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F - entityYaw));
+        poseStack.translate(0.0F, BODY_BASE_HEIGHT, 0.0F);
+        poseStack.mulPose(Axis.YP.rotationDegrees(270.0F - entityYaw));
         poseStack.mulPose(Axis.ZP.rotationDegrees(-pitch));
+        poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
 
         float hurtTime = entity.getHurtTime() - partialTicks;
         float damage = entity.getDamage() - partialTicks;
@@ -69,16 +78,24 @@ public class StorageDiscMinecartRenderer extends EntityRenderer<StorageDiscMinec
             poseStack.mulPose(Axis.XP.rotationDegrees(Mth.sin(hurtTime) * hurtTime * damage / 10.0F * entity.getHurtDir()));
         }
 
-        poseStack.scale(1.35F, 1.35F, 1.35F);
+        poseStack.scale(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
+        renderLayer(GLASS_PANE_STACK, 0.0F, poseStack, buffer, packedLight, entity.getId());
+        renderLayer(entity.getDiscStack(), TOP_LAYER_OFFSET, poseStack, buffer, packedLight, entity.getId() + 1);
+        poseStack.popPose();
+    }
+
+    private void renderLayer(ItemStack stack, float heightOffset, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int seed) {
+        poseStack.pushPose();
+        poseStack.translate(0.0F, 0.0F, heightOffset);
         this.itemRenderer.renderStatic(
-                entity.getDiscStack(),
+                stack,
                 ItemDisplayContext.GROUND,
                 packedLight,
                 OverlayTexture.NO_OVERLAY,
                 poseStack,
                 buffer,
-                entity.level(),
-                entity.getId()
+                null,
+                seed
         );
         poseStack.popPose();
     }

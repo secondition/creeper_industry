@@ -3,6 +3,7 @@ package com.secondition.creeperindustry.content.logistics.storage;
 import java.util.List;
 
 import com.secondition.creeperindustry.CIDataComponents;
+import com.secondition.creeperindustry.CIItems;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -44,12 +45,29 @@ public class StorageDiscItem extends Item {
         stack.set(CIDataComponents.STORAGE_DISC_CONTENTS.get(), contents.isEmpty() ? StorageDiscContents.EMPTY : contents);
     }
 
+    public static boolean canStoreItem(ItemStack stack) {
+        return !stack.isEmpty() && getDiscLayerCount(stack) <= 1;
+    }
+
     public static boolean canBurn(ItemStack discStack, ItemStack inputStack) {
         if (discStack.isEmpty() || inputStack.isEmpty()) {
             return false;
         }
+        if (!canStoreItem(inputStack)) {
+            return false;
+        }
         StorageDiscContents contents = getContents(discStack);
         return contents.isEmpty() || contents.matches(inputStack);
+    }
+
+    public static int getDiscLayerCount(ItemStack stack) {
+        int layerCount = 0;
+        ItemStack current = stack;
+        while (!current.isEmpty() && current.is(CIItems.STORAGE_DISC.get())) {
+            layerCount++;
+            current = getContents(current).storedItem();
+        }
+        return layerCount;
     }
 
     public static boolean isFull(ItemStack discStack) {

@@ -22,8 +22,8 @@ public class CIEntityTypes {
                     .build(CreeperIndustry.asResource("guided_firework_rocket").toString()));
     public static final Supplier<EntityType<StorageDiscMinecartEntity>> STORAGE_DISC_MINECART = ENTITY_TYPES.register("storage_disc_minecart",
             () -> EntityType.Builder.<StorageDiscMinecartEntity>of(StorageDiscMinecartEntity::new, MobCategory.MISC)
-                    .sized(0.98F, 0.7F)
-                    .passengerAttachments(0.1875F)
+                    .sized(1.0F, 0.125F)
+                    .passengerAttachments(0.0625F)
                     .clientTrackingRange(8)
                     .build(CreeperIndustry.asResource("storage_disc_minecart").toString()));
 
