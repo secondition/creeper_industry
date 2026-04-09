@@ -21,6 +21,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -34,6 +35,8 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 public abstract class BiosphereBlock extends SimpleEntityBlock {
     public static final int WIDTH_X = 3;
@@ -177,6 +180,16 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
         builder.add(X_PART, Y_PART, Z_PART, FACING);
     }
 
+    @Override
+    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return getApproximateShape(state);
+    }
+
+    @Override
+    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return getApproximateShape(state);
+    }
+
     public static boolean isController(BlockState state) {
         return state.getValue(X_PART) == 0
                 && state.getValue(Y_PART) == 0
@@ -215,6 +228,16 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
         }
 
         return new AABB(minX, minY, minZ, maxX, maxY, maxZ);
+    }
+
+    private VoxelShape getApproximateShape(BlockState state) {
+        return BiosphereApproximateCollisionShapes.getShape(
+                type,
+                state.getValue(X_PART),
+                state.getValue(Y_PART),
+                state.getValue(Z_PART),
+                state.getValue(FACING)
+        );
     }
 
     private boolean openMenu(Level level, BlockPos pos, BlockState state, Player player) {
