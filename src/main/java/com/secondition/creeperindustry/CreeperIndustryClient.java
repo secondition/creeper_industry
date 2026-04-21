@@ -1,5 +1,6 @@
 package com.secondition.creeperindustry;
 
+import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourceScreen;
 import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartEntity;
 import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartRenderer;
 import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerScreen;
@@ -26,6 +27,7 @@ public class CreeperIndustryClient {
     static void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
         event.register(CIMenuTypes.BIOSPHERE.get(), BiosphereScreen::new);
         event.register(CIMenuTypes.DISC_BURNER.get(), DiscBurnerScreen::new);
+        event.register(CIMenuTypes.CREATIVE_SIGNAL_SOURCE.get(), CreativeSignalSourceScreen::new);
     }
 
     @SubscribeEvent

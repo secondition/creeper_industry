@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "creeper_industry:block/creative_signal_source"
+  }
+}

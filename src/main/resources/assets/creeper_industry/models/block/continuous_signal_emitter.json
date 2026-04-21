@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:block/cube_all",
-  "textures": {
-    "all": "creeper_industry:block/continuous_signal_emitter"
-  }
-}
