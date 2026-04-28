@@ -22,7 +22,7 @@ public class CICreativeModeTabs {
                 output.accept(CIItems.BLASTPROOF_DUCT_INTERFACE.get());
                 output.accept(CIBlocks.BLASTPROOF_FRAME.get());
                 output.accept(CIBlocks.BLASTPROOF_GLASS.get());
-                output.accept(CIBlocks.CONTINUOUS_SIGNAL_EMITTER.get());
+                output.accept(CIBlocks.CREATIVE_SIGNAL_SOURCE.get());
                 output.accept(CIBlocks.SIGNAL_UPDATE_DETECTOR.get());
                 output.accept(CIBlocks.PRECISION_DROPPER.get());
                 output.accept(CIBlocks.DISC_BURNER.get());

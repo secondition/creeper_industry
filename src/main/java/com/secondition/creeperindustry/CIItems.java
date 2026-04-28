@@ -22,7 +22,7 @@ public class CIItems {
     public static final Supplier<Item> BLASTPROOF_DUCT_INTERFACE = ITEMS.register("blastproof_duct_interface", () -> new BlastproofDuctInterfaceItem(new Item.Properties()));
     public static final Supplier<Item> BLASTPROOF_FRAME = ITEMS.register("blastproof_frame", () -> new BlockItem(CIBlocks.BLASTPROOF_FRAME.get(), new Item.Properties()));
     public static final Supplier<Item> BLASTPROOF_GLASS = ITEMS.register("blastproof_glass", () -> new BlockItem(CIBlocks.BLASTPROOF_GLASS.get(), new Item.Properties()));
-    public static final Supplier<Item> CONTINUOUS_SIGNAL_EMITTER = ITEMS.register("continuous_signal_emitter", () -> new BlockItem(CIBlocks.CONTINUOUS_SIGNAL_EMITTER.get(), new Item.Properties()));
+    public static final Supplier<Item> CREATIVE_SIGNAL_SOURCE = ITEMS.register("creative_signal_source", () -> new BlockItem(CIBlocks.CREATIVE_SIGNAL_SOURCE.get(), new Item.Properties()));
     public static final Supplier<Item> SIGNAL_UPDATE_DETECTOR = ITEMS.register("signal_update_detector", () -> new BlockItem(CIBlocks.SIGNAL_UPDATE_DETECTOR.get(), new Item.Properties()));
     public static final Supplier<Item> PRECISION_DROPPER = ITEMS.register("precision_dropper", () -> new BlockItem(CIBlocks.PRECISION_DROPPER.get(), new Item.Properties()));
     public static final Supplier<Item> DISC_BURNER = ITEMS.register("disc_burner", () -> new BlockItem(CIBlocks.DISC_BURNER.get(), new Item.Properties()));

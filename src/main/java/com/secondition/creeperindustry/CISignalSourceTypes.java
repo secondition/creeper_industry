@@ -3,6 +3,7 @@ package com.secondition.creeperindustry;
 import com.secondition.creeperindustry.content.energy.signal.ContinuousSignalSourceRepository;
 import com.secondition.creeperindustry.content.energy.signal.ContinuousSignalPropagationService;
 import com.secondition.creeperindustry.content.energy.signal.ContinuousSignalUpdateService;
+import com.secondition.creeperindustry.content.energy.signal.CreativeSignalPulseSource;
 import com.secondition.creeperindustry.content.energy.signal.ExplosionSignalSource;
 import com.secondition.creeperindustry.content.energy.signal.InMemorySignalSourceRepository;
 import com.secondition.creeperindustry.content.energy.signal.InMemoryContinuousSignalSourceRepository;
@@ -52,6 +53,7 @@ public class CISignalSourceTypes {
 
     public static final SignalSourceType<ExplosionSignalSource> EXPLOSION = register("explosion", ExplosionSignalSource.class);
     public static final SignalSourceType<MachineSignalSource> MACHINE = register("machine", MachineSignalSource.class);
+    public static final SignalSourceType<CreativeSignalPulseSource> CREATIVE_PULSE = register("creative_pulse", CreativeSignalPulseSource.class);
 
     private static <T extends com.secondition.creeperindustry.content.energy.signal.SignalSource> SignalSourceType<T> register(String path, Class<T> sourceClass) {
         return REPOSITORY.registerType(new SignalSourceType<>(CreeperIndustry.asResource(path), sourceClass));

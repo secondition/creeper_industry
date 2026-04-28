@@ -5,7 +5,7 @@ import java.util.function.Supplier;
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofDuctBlock;
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofFrameBlock;
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofGlassBlock;
-import com.secondition.creeperindustry.content.energy.signal.ContinuousSignalEmitterBlock;
+import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourceBlock;
 import com.secondition.creeperindustry.content.energy.signal.SignalUpdateDetectorBlock;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperBlock;
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherBlock;
@@ -32,8 +32,8 @@ public class CIBlocks {
             () -> new BlastproofFrameBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(8.0F, 16.0F).sound(SoundType.NETHERITE_BLOCK)));
     public static final Supplier<Block> BLASTPROOF_GLASS = BLOCKS.register("blastproof_glass",
             () -> new BlastproofGlassBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).strength(5.0F, 10.0F).sound(SoundType.GLASS)));
-    public static final Supplier<Block> CONTINUOUS_SIGNAL_EMITTER = BLOCKS.register("continuous_signal_emitter",
-            () -> new ContinuousSignalEmitterBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL)));
+    public static final Supplier<Block> CREATIVE_SIGNAL_SOURCE = BLOCKS.register("creative_signal_source",
+            () -> new CreativeSignalSourceBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL)));
     public static final Supplier<Block> SIGNAL_UPDATE_DETECTOR = BLOCKS.register("signal_update_detector",
             () -> new SignalUpdateDetectorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL)));
 
