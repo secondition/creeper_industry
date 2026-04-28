@@ -121,6 +121,9 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
 
     @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+        if (tryCycleMonsterOutputSelection(level, pos, state, player)) {
+            return InteractionResult.sidedSuccess(level.isClientSide());
+        }
         if (openMenu(level, pos, state, player)) {
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
@@ -230,6 +233,19 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
             serverPlayer.openMenu(biosphere);
         }
         return true;
+    }
+
+    private boolean tryCycleMonsterOutputSelection(Level level, BlockPos pos, BlockState state, Player player) {
+        if (type != BiosphereType.MONSTER || !player.isShiftKeyDown()) {
+            return false;
+        }
+        if (level.isClientSide()) {
+            return true;
+        }
+
+        BlockEntity blockEntity = level.getBlockEntity(getControllerPos(pos, state));
+        return blockEntity instanceof BiosphereBlockEntity biosphere
+                && biosphere.cycleMonsterOutputSelection(player);
     }
 
     private void removeOtherParts(Level level, BlockPos controllerPos, BlockPos removedPos) {

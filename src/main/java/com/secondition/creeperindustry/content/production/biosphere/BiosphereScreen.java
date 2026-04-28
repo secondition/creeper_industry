@@ -4,6 +4,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -37,7 +38,9 @@ public class BiosphereScreen extends AbstractContainerScreen<BiosphereMenu> {
         guiGraphics.fill(panelLeft + 4, panelTop + 78, panelRight - 4, panelBottom - 4, 0xFF2A2521);
 
         drawSlot(guiGraphics, leftPos + 43, topPos + 34);
-        drawSlot(guiGraphics, leftPos + 79, topPos + 34);
+        if (menu.getBiosphereType() == BiosphereType.BOTANICAL) {
+            drawSlot(guiGraphics, leftPos + 79, topPos + 34);
+        }
         drawSlot(guiGraphics, leftPos + 115, topPos + 34);
 
         for (int row = 0; row < 3; row++) {
@@ -53,11 +56,32 @@ public class BiosphereScreen extends AbstractContainerScreen<BiosphereMenu> {
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(font, title, 8, 7, 0xF4F1E8, false);
-        guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.sapling"), 33, 22, 0xD5D0C6, false);
-        guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.bonemeal"), 67, 22, 0xD5D0C6, false);
-        guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.output"), 117, 22, 0xD5D0C6, false);
-        guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.signal_hint"), 8, 58, 0xB8D7C9, false);
+        if (menu.getBiosphereType() == BiosphereType.MONSTER) {
+            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.spawn_egg"), 29, 22, 0xD5D0C6, false);
+            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.drop"), 116, 22, 0xD5D0C6, false);
+            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.monster_hint"), 8, 48, 0xB8D7C9, false);
+            guiGraphics.drawString(font, getMonsterSelectionLine(), 8, 58, 0xD5D0C6, false);
+        } else {
+            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.sapling"), 33, 22, 0xD5D0C6, false);
+            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.bonemeal"), 67, 22, 0xD5D0C6, false);
+            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.output"), 117, 22, 0xD5D0C6, false);
+            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.signal_hint"), 8, 58, 0xB8D7C9, false);
+        }
         guiGraphics.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xD5D0C6, false);
+    }
+
+    private Component getMonsterSelectionLine() {
+        BiosphereBlockEntity biosphere = menu.getBiosphereBlockEntity();
+        if (biosphere == null) {
+            return Component.translatable("gui.creeper_industry.biosphere.no_output");
+        }
+
+        ItemStack preview = biosphere.getSelectedMonsterOutputPreview();
+        if (preview.isEmpty()) {
+            return Component.translatable("gui.creeper_industry.biosphere.no_output");
+        }
+
+        return Component.translatable("gui.creeper_industry.biosphere.selected_output", preview.getHoverName());
     }
 
     private void drawSlot(GuiGraphics guiGraphics, int x, int y) {

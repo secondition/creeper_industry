@@ -16,8 +16,13 @@
   "block.creeper_industry.monster_biosphere": "怪物生态瓶",
   "gui.creeper_industry.biosphere.sapling": "树苗",
   "gui.creeper_industry.biosphere.bonemeal": "骨粉",
+  "gui.creeper_industry.biosphere.spawn_egg": "刷怪蛋",
+  "gui.creeper_industry.biosphere.drop": "掉落物",
   "gui.creeper_industry.biosphere.output": "产出",
   "gui.creeper_industry.biosphere.signal_hint": "接收幅值 > 8 的信号时产出 1 个原木",
+  "gui.creeper_industry.biosphere.monster_hint": "接收幅值 > 8 的正信号时产出 1 个选中掉落",
+  "gui.creeper_industry.biosphere.selected_output": "当前选择: %s",
+  "gui.creeper_industry.biosphere.no_output": "当前选择: 暂无可用掉落",
   "gui.creeper_industry.disc_burner.input": "物品",
   "gui.creeper_industry.disc_burner.disc": "唱片",
   "gui.creeper_industry.disc_burner.status": "烧录",
@@ -29,5 +34,7 @@
   "tooltip.creeper_industry.storage_disc.usage": "潜行右键释放全部内容并清空唱片",
   "message.creeper_industry.continuous_signal_emitter.amplitude": "发射器: 幅值=%s，周期=%s",
   "message.creeper_industry.continuous_signal_emitter.period": "发射器: 周期=%s，幅值=%s",
-  "message.creeper_industry.signal_update_detector.reading": "信号 equivalent_value=%s，instantaneous=%s，last_non_zero=%s"
+  "message.creeper_industry.signal_update_detector.reading": "信号 equivalent_value=%s，instantaneous=%s，last_non_zero=%s",
+  "message.creeper_industry.monster_biosphere.selected_drop": "怪物生态瓶当前产物: %s",
+  "message.creeper_industry.monster_biosphere.no_output": "这个刷怪蛋当前没有可用掉落"
 }

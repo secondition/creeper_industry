@@ -27,16 +27,21 @@ public class BiosphereBlockEntityRenderer implements BlockEntityRenderer<Biosphe
 
     @Override
     public void render(BiosphereBlockEntity biosphere, float partialTick, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        if (!BiosphereBlock.isController(biosphere.getBlockState()) || biosphere.getBiosphereType() != BiosphereType.BOTANICAL) {
+        if (!BiosphereBlock.isController(biosphere.getBlockState())) {
             return;
         }
 
-        ItemStack sapling = biosphere.getDisplayedSapling();
-        if (sapling.isEmpty()) {
+        BiosphereType biosphereType = biosphere.getBiosphereType();
+        if (biosphereType != BiosphereType.BOTANICAL && biosphereType != BiosphereType.MONSTER) {
             return;
         }
 
-        ItemStack renderedStack = sapling.copy();
+        ItemStack displayedInput = biosphere.getDisplayedPrimaryInput();
+        if (displayedInput.isEmpty()) {
+            return;
+        }
+
+        ItemStack renderedStack = displayedInput.copy();
         renderedStack.setCount(1);
 
         double gameTime = (biosphere.getLevel() != null ? biosphere.getLevel().getGameTime() : 0L) + partialTick;
