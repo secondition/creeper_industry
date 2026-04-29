@@ -40,10 +40,7 @@
   "tooltip.creeper_industry.storage_disc.stored_item": "记录物品: %s",
   "tooltip.creeper_industry.storage_disc.amount": "记录数量: %s / %s",
   "tooltip.creeper_industry.storage_disc.usage": "潜行右键释放全部内容并清空唱片",
-  "message.creeper_industry.continuous_signal_emitter.amplitude": "发射器: 幅值=%s，周期=%s",
-  "message.creeper_industry.continuous_signal_emitter.period": "发射器: 周期=%s，幅值=%s",
   "message.creeper_industry.signal_update_detector.reading": "信号 equivalent_value=%s，instantaneous=%s，last_non_zero=%s",
   "message.creeper_industry.monster_biosphere.selected_drop": "怪物生态瓶当前产物: %s",
   "message.creeper_industry.monster_biosphere.no_output": "这个刷怪蛋当前没有可用掉落"
-  "message.creeper_industry.signal_update_detector.reading": "信号 equivalent_value=%s，instantaneous=%s，last_non_zero=%s"
 }

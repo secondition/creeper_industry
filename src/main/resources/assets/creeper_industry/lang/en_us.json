@@ -40,7 +40,7 @@
   "tooltip.creeper_industry.storage_disc.stored_item": "Stored Item: %s",
   "tooltip.creeper_industry.storage_disc.amount": "Stored Amount: %s / %s",
   "tooltip.creeper_industry.storage_disc.usage": "Sneak right-click to release all contents and clear the disc",
-  "message.creeper_industry.continuous_signal_emitter.amplitude": "Emitter amplitude=%s, period=%s",
-  "message.creeper_industry.continuous_signal_emitter.period": "Emitter period=%s, amplitude=%s",
-  "message.creeper_industry.signal_update_detector.reading": "Signal equivalent_value=%s, instantaneous=%s, last_non_zero=%s"
+  "message.creeper_industry.signal_update_detector.reading": "Signal equivalent_value=%s, instantaneous=%s, last_non_zero=%s",
+  "message.creeper_industry.monster_biosphere.selected_drop": "Monster Biosphere selected drop: %s",
+  "message.creeper_industry.monster_biosphere.no_output": "This spawn egg has no eligible drop"
 }
