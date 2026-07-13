@@ -112,8 +112,8 @@ com/secondition/creeperindustry
 │  ├─ energy/
 │  │  ├─ signal/                        信号定义、运行时、传播、聚合与刷新
 │  │  └─ transmission/                  导管、接口与传输拓扑
-│  ├─ automation/                       传感、执行、收集、破坏、投放与机械控制
-│  ├─ production/
+│  ├─ automation/                       传感、执行、收集、破坏、投放与机械控制等实现基础功能的功能性设备
+│  ├─ production/                       输入脉冲和材料就直接实现产出某物品的目的性设备
 │  │  ├─ biosphere/                     三类生态瓶
 │  │  └─ printer/                       蓝图打印与结构施工设备
 │  ├─ blueprint/                        蓝图扫描、文件格式、校验、变换与放置计划
