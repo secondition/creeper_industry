@@ -3,7 +3,7 @@ package com.secondition.creeperindustry.content.energy.signal;
 import java.util.UUID;
 
 import com.secondition.creeperindustry.CIBlockEntityTypes;
-import com.secondition.creeperindustry.CISignalSourceTypes;
+import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntimeAccess;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -75,13 +75,13 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
 
     @Override
     public void setRemoved() {
-        removeContinuousSignalSource(true);
+        removeContinuousSignalSource();
         super.setRemoved();
     }
 
     @Override
     public void onChunkUnloaded() {
-        removeContinuousSignalSource(false);
+        removeContinuousSignalSource();
         super.onChunkUnloaded();
     }
 
@@ -153,7 +153,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
                         SignalWaveform.SQUARE
                 )
         );
-        CISignalSourceTypes.transientDispatcher().dispatch(currentLevel, source);
+        SignalRuntimeAccess.get(currentLevel).transientDispatcher().dispatch(currentLevel, source);
     }
 
     @Override
@@ -214,7 +214,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         }
 
         if (signalType != CreativeSignalSourceSignalType.CONTINUOUS || amplitude <= 0 || periodTicks <= 0) {
-            removeContinuousSignalSource(true);
+            removeContinuousSignalSource();
             return;
         }
 
@@ -226,21 +226,18 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
                 currentLevel.getGameTime(),
                 new SignalDefinition(amplitude, periodTicks, phaseTicks, SignalWaveform.SQUARE)
         );
-        CISignalSourceTypes.continuousSignalUpdateService().upsert(currentLevel, source);
+        SignalRuntimeAccess.get(currentLevel).continuousUpdateService().upsert(currentLevel, source);
         sourceRegistered = true;
     }
 
-    private void removeContinuousSignalSource(boolean refreshAffectedReceivers) {
+    private void removeContinuousSignalSource() {
         Level currentLevel = level;
         if (currentLevel == null || currentLevel.isClientSide() || !sourceRegistered) {
             return;
         }
 
-        if (refreshAffectedReceivers) {
-            CISignalSourceTypes.continuousSignalUpdateService().remove(currentLevel, continuousSourceId);
-        } else {
-            CISignalSourceTypes.continuousSignalUpdateService().removeWithoutRefresh(currentLevel, continuousSourceId);
-        }
+        SignalRuntimeAccess.getExisting(currentLevel)
+                .ifPresent(runtime -> runtime.continuousUpdateService().remove(currentLevel, continuousSourceId));
         sourceRegistered = false;
     }
 

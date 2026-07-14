@@ -3,6 +3,7 @@ package com.secondition.creeperindustry;
 import java.util.function.Supplier;
 
 import com.mojang.serialization.Codec;
+import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntime;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -14,6 +15,8 @@ public class CIAttachmentTypes {
 
     public static final Supplier<AttachmentType<Boolean>> CONTROLLED_EXPLOSION_UNLOCKED = ATTACHMENT_TYPES.register("controlled_explosion_unlocked",
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build());
+    public static final Supplier<AttachmentType<SignalRuntime>> SIGNAL_RUNTIME = ATTACHMENT_TYPES.register("signal_runtime",
+            () -> AttachmentType.builder(SignalRuntime::new).build());
 
     public static void register(IEventBus modEventBus) {
         ATTACHMENT_TYPES.register(modEventBus);

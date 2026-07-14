@@ -1,6 +1,7 @@
 package com.secondition.creeperindustry.content.energy.transmission;
 
-import com.secondition.creeperindustry.CISignalSourceTypes;
+import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntime;
+import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntimeAccess;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,13 +40,14 @@ public class BlastproofDuctInterfaceItem extends Item {
         level.setBlock(pos, updatedState, Block.UPDATE_ALL);
         level.sendBlockUpdated(pos, state, updatedState, Block.UPDATE_ALL);
         level.updateNeighborsAt(pos, updatedState.getBlock());
-        CISignalSourceTypes.deferredSignalRefreshQueue().enqueue(
-                level.dimension(),
-                CISignalSourceTypes.ductNetworkManager().getAffectedReceiversForInterfaceChange(
+        SignalRuntime runtime = SignalRuntimeAccess.get(level);
+        runtime.scheduleTopologyRefresh(
+                level,
+                runtime.ductNetworkManager().getAffectedReceiversForInterfaceChange(
                         level,
                         pos,
-                        CISignalSourceTypes.signalReceiverIndex(),
-                        CISignalSourceTypes.continuousSignalSourceRepository()
+                        runtime.receiverIndex(),
+                        runtime.continuousSourceRepository()
                 )
         );
 

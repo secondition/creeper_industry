@@ -1,7 +1,7 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
 import com.secondition.creeperindustry.CIBlockEntityTypes;
-import com.secondition.creeperindustry.CISignalSourceTypes;
+import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntimeAccess;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -75,7 +75,6 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
     public void onLoad() {
         super.onLoad();
         registerReceiver();
-        refreshOnFirstLoad();
     }
 
     @Override
@@ -110,31 +109,13 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
         if (level == null || level.isClientSide()) {
             return;
         }
-        CISignalSourceTypes.signalReceiverIndex().register(level.dimension(), worldPosition);
+        SignalRuntimeAccess.get(level).registerReceiver(level, worldPosition);
     }
 
     private void unregisterReceiver() {
         if (level == null || level.isClientSide()) {
             return;
         }
-        CISignalSourceTypes.signalReceiverIndex().unregister(level.dimension(), worldPosition);
-    }
-
-    private void refreshOnFirstLoad() {
-        Level currentLevel = level;
-        if (currentLevel == null || currentLevel.isClientSide()) {
-            return;
-        }
-
-        if (!CISignalSourceTypes.continuousSignalSourceRepository().getActiveSources(currentLevel.dimension()).isEmpty()) {
-            CISignalSourceTypes.unifiedSignalRefreshService().refreshTarget(currentLevel, worldPosition);
-        }
-    }
-
-    public static void serverTick(Level level, BlockPos pos, BlockState state, SignalUpdateDetectorBlockEntity detector) {
-        if (CISignalSourceTypes.continuousSignalSourceRepository().getActiveSources(level.dimension()).isEmpty()) {
-            return;
-        }
-        CISignalSourceTypes.unifiedSignalRefreshService().refreshTarget(level, pos, level.getGameTime());
+        SignalRuntimeAccess.getExisting(level).ifPresent(runtime -> runtime.unregisterReceiver(worldPosition));
     }
 }

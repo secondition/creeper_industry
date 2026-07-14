@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.secondition.creeperindustry.CIBlockEntityTypes;
-import com.secondition.creeperindustry.CISignalSourceTypes;
 import com.secondition.creeperindustry.content.energy.signal.AggregatedSignal;
 import com.secondition.creeperindustry.content.energy.signal.SignalReceiver;
+import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntimeAccess;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -113,10 +113,6 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
 
     public BiosphereBlockEntity(BlockPos pos, BlockState blockState) {
         super(CIBlockEntityTypes.BIOSPHERE.get(), pos, blockState);
-    }
-
-    public static void serverTick(Level level, BlockPos pos, BlockState state, BiosphereBlockEntity biosphere) {
-        biosphere.serverTick();
     }
 
     public ContainerData dataAccess() {
@@ -332,23 +328,10 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         }
     }
 
-    private void serverTick() {
-        if (level == null || level.isClientSide()) {
-            return;
-        }
-
-        if (CISignalSourceTypes.continuousSignalSourceRepository().getActiveSources(level.dimension()).isEmpty()) {
-            return;
-        }
-
-        CISignalSourceTypes.unifiedSignalRefreshService().refreshTarget(level, worldPosition, level.getGameTime());
-    }
-
     @Override
     public void onLoad() {
         super.onLoad();
         registerReceiver();
-        refreshOnFirstLoad();
     }
 
     @Override
@@ -522,25 +505,14 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         if (level == null || level.isClientSide()) {
             return;
         }
-        CISignalSourceTypes.signalReceiverIndex().register(level.dimension(), worldPosition);
+        SignalRuntimeAccess.get(level).registerReceiver(level, worldPosition);
     }
 
     private void unregisterReceiver() {
         if (level == null || level.isClientSide()) {
             return;
         }
-        CISignalSourceTypes.signalReceiverIndex().unregister(level.dimension(), worldPosition);
-    }
-
-    private void refreshOnFirstLoad() {
-        Level currentLevel = level;
-        if (currentLevel == null || currentLevel.isClientSide()) {
-            return;
-        }
-
-        if (!CISignalSourceTypes.continuousSignalSourceRepository().getActiveSources(currentLevel.dimension()).isEmpty()) {
-            CISignalSourceTypes.unifiedSignalRefreshService().refreshTarget(currentLevel, worldPosition);
-        }
+        SignalRuntimeAccess.getExisting(level).ifPresent(runtime -> runtime.unregisterReceiver(worldPosition));
     }
 
     public boolean cycleMonsterOutputSelection(Player player) {

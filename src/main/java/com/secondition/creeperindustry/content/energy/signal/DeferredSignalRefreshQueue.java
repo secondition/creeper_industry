@@ -2,32 +2,32 @@ package com.secondition.creeperindustry.content.energy.signal;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.Level;
 
 public class DeferredSignalRefreshQueue {
-    private final Map<ResourceKey<Level>, Set<BlockPos>> queuedTargets = new ConcurrentHashMap<>();
+    private final Set<BlockPos> queuedTargets = ConcurrentHashMap.newKeySet();
 
-    public void enqueue(ResourceKey<Level> level, Collection<BlockPos> targets) {
+    public void enqueue(Collection<BlockPos> targets) {
         if (targets.isEmpty()) {
             return;
         }
 
-        queuedTargets
-                .computeIfAbsent(level, ignored -> ConcurrentHashMap.newKeySet())
-                .addAll(targets.stream().map(BlockPos::immutable).toList());
+        queuedTargets.addAll(targets.stream().map(BlockPos::immutable).toList());
     }
 
-    public Collection<BlockPos> drain(ResourceKey<Level> level) {
-        Set<BlockPos> targets = queuedTargets.remove(level);
-        if (targets == null || targets.isEmpty()) {
+    public Collection<BlockPos> drain() {
+        if (queuedTargets.isEmpty()) {
             return java.util.List.of();
         }
-        return java.util.List.copyOf(new LinkedHashSet<>(targets));
+        LinkedHashSet<BlockPos> targets = new LinkedHashSet<>(queuedTargets);
+        queuedTargets.removeAll(targets);
+        return java.util.List.copyOf(targets);
+    }
+
+    public void clear() {
+        queuedTargets.clear();
     }
 }

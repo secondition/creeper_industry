@@ -7,7 +7,6 @@ import java.util.Set;
 
 import javax.annotation.Nullable;
 
-import com.secondition.creeperindustry.CIBlockEntityTypes;
 import com.secondition.creeperindustry.foundation.blockEntity.SimpleEntityBlock;
 
 import net.minecraft.core.BlockPos;
@@ -25,8 +24,6 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -111,15 +108,6 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
     @Nullable
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new BiosphereBlockEntity(pos, state);
-    }
-
-    @Override
-    @Nullable
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        if (level.isClientSide()) {
-            return null;
-        }
-        return createTickerHelper(blockEntityType, CIBlockEntityTypes.BIOSPHERE.get(), BiosphereBlockEntity::serverTick);
     }
 
     @Override

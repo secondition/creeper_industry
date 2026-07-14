@@ -38,7 +38,7 @@ public class UnifiedSignalRefreshService {
         List<DeliveredSignal> contributions = new ArrayList<>(
                 continuousPropagationService.collectContributions(level, targetPos, gameTime)
         );
-        contributions.addAll(signalAggregationService.getSubmittedContributions(level.dimension(), targetPos, gameTime));
+        contributions.addAll(signalAggregationService.getSubmittedContributions(targetPos, gameTime));
 
         if (contributions.isEmpty()) {
             receiver.clearSignal();

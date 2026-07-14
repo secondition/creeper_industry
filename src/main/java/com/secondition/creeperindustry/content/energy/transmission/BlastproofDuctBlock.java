@@ -1,6 +1,7 @@
 package com.secondition.creeperindustry.content.energy.transmission;
 
-import com.secondition.creeperindustry.CISignalSourceTypes;
+import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntime;
+import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntimeAccess;
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
@@ -76,11 +77,12 @@ public class BlastproofDuctBlock extends Block {
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
         if (!level.isClientSide() && !oldState.is(state.getBlock())) {
-            refreshAffectedReceivers(level, CISignalSourceTypes.ductNetworkManager().getAffectedReceiversAfterPlacement(
+            SignalRuntime runtime = SignalRuntimeAccess.get(level);
+            refreshAffectedReceivers(level, runtime.ductNetworkManager().getAffectedReceiversAfterPlacement(
                     level,
                     pos,
-                    CISignalSourceTypes.signalReceiverIndex(),
-                    CISignalSourceTypes.continuousSignalSourceRepository()
+                    runtime.receiverIndex(),
+                    runtime.continuousSourceRepository()
             ));
         }
     }
@@ -89,20 +91,22 @@ public class BlastproofDuctBlock extends Block {
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
         LinkedHashSet<BlockPos> affectedReceivers = new LinkedHashSet<>();
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
-            affectedReceivers.addAll(CISignalSourceTypes.ductNetworkManager().getAffectedReceiversBeforeRemoval(
+            SignalRuntime runtime = SignalRuntimeAccess.get(level);
+            affectedReceivers.addAll(runtime.ductNetworkManager().getAffectedReceiversBeforeRemoval(
                     level,
                     pos,
-                    CISignalSourceTypes.signalReceiverIndex(),
-                    CISignalSourceTypes.continuousSignalSourceRepository()
+                    runtime.receiverIndex(),
+                    runtime.continuousSourceRepository()
             ));
         }
         super.onRemove(state, level, pos, newState, movedByPiston);
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
-            affectedReceivers.addAll(CISignalSourceTypes.ductNetworkManager().getAffectedReceiversAfterRemoval(
+            SignalRuntime runtime = SignalRuntimeAccess.get(level);
+            affectedReceivers.addAll(runtime.ductNetworkManager().getAffectedReceiversAfterRemoval(
                     level,
                     pos,
-                    CISignalSourceTypes.signalReceiverIndex(),
-                    CISignalSourceTypes.continuousSignalSourceRepository()
+                    runtime.receiverIndex(),
+                    runtime.continuousSourceRepository()
             ));
             refreshAffectedReceivers(level, affectedReceivers);
         }
@@ -173,18 +177,19 @@ public class BlastproofDuctBlock extends Block {
                 pos.getY() + 0.5D + face.getStepY() * 0.35D,
                 pos.getZ() + 0.5D + face.getStepZ() * 0.35D,
                 new ItemStack(com.secondition.creeperindustry.CIItems.BLASTPROOF_DUCT_INTERFACE.get())));
-        refreshAffectedReceivers(level, CISignalSourceTypes.ductNetworkManager().getAffectedReceiversForInterfaceChange(
+        SignalRuntime runtime = SignalRuntimeAccess.get(level);
+        refreshAffectedReceivers(level, runtime.ductNetworkManager().getAffectedReceiversForInterfaceChange(
                 level,
                 pos,
-                CISignalSourceTypes.signalReceiverIndex(),
-                CISignalSourceTypes.continuousSignalSourceRepository()
+                runtime.receiverIndex(),
+                runtime.continuousSourceRepository()
         ));
         return InteractionResult.CONSUME;
     }
 
     private void refreshAffectedReceivers(Level level, java.util.Collection<BlockPos> receiverPositions) {
         if (!receiverPositions.isEmpty()) {
-            CISignalSourceTypes.deferredSignalRefreshQueue().enqueue(level.dimension(), receiverPositions);
+            SignalRuntimeAccess.get(level).scheduleTopologyRefresh(level, receiverPositions);
         }
     }
 

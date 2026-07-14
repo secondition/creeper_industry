@@ -8,23 +8,21 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import com.secondition.creeperindustry.CIBlocks;
 import com.secondition.creeperindustry.content.energy.transmission.DuctTransmissionHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 public class DuctNetworkManager {
-    private final Map<ResourceKey<Level>, LevelCache> caches = new ConcurrentHashMap<>();
+    private final LevelCache cache = new LevelCache();
 
-    public void invalidateLevel(ResourceKey<Level> level) {
-        caches.remove(level);
+    public void clear() {
+        cache.posToNetwork.clear();
     }
 
     public boolean hasNearbyDuctEntrance(Level level, Vec3 sourcePos, int maxPropagationCost) {
@@ -61,7 +59,6 @@ public class DuctNetworkManager {
 
     public Collection<BlockPos> getPotentialTargets(Level level, Vec3 sourcePos, int maxPropagationCost, SignalReceiverIndex receiverIndex) {
         Collection<BlockPos> directTargets = receiverIndex.getWithinManhattanDistance(
-                level.dimension(),
                 BlockPos.containing(sourcePos),
                 maxPropagationCost
         );
@@ -71,7 +68,7 @@ public class DuctNetworkManager {
         }
 
         LinkedHashSet<BlockPos> candidates = new LinkedHashSet<>(directTargets);
-        for (BlockPos receiverPos : receiverIndex.getAll(level.dimension())) {
+        for (BlockPos receiverPos : receiverIndex.getAll()) {
             for (DuctNetwork network : networks) {
                 if (network.canPotentiallyReach(receiverPos, maxPropagationCost)) {
                     candidates.add(receiverPos.immutable());
@@ -88,7 +85,6 @@ public class DuctNetworkManager {
             SignalReceiverIndex receiverIndex,
             ContinuousSignalSourceRepository repository
     ) {
-        LevelCache cache = getLevelCache(level.dimension());
         LinkedHashSet<DuctNetwork> affectedNetworks = new LinkedHashSet<>();
 
         LinkedHashSet<DuctNetwork> adjacentNetworks = new LinkedHashSet<>();
@@ -120,7 +116,6 @@ public class DuctNetworkManager {
             SignalReceiverIndex receiverIndex,
             ContinuousSignalSourceRepository repository
     ) {
-        LevelCache cache = getLevelCache(level.dimension());
         LinkedHashSet<DuctNetwork> affectedNetworks = new LinkedHashSet<>();
 
         DuctNetwork previousNetwork = cache.posToNetwork.get(ductPos);
@@ -156,7 +151,6 @@ public class DuctNetworkManager {
             SignalReceiverIndex receiverIndex,
             ContinuousSignalSourceRepository repository
     ) {
-        LevelCache cache = getLevelCache(level.dimension());
         DuctNetwork removedNetwork = cache.posToNetwork.remove(removedPos);
 
         LinkedHashSet<DuctNetwork> affectedNetworks = new LinkedHashSet<>();
@@ -191,7 +185,7 @@ public class DuctNetworkManager {
             ContinuousSignalSourceRepository repository,
             Collection<DuctNetwork> networks
     ) {
-        int maxPropagationCost = repository.getActiveSources(level.dimension()).stream()
+        int maxPropagationCost = repository.getActiveSources().stream()
                 .mapToInt(source -> source.signal().amplitude() - 1)
                 .max()
                 .orElse(-1);
@@ -200,7 +194,7 @@ public class DuctNetworkManager {
         }
 
         LinkedHashSet<BlockPos> receivers = new LinkedHashSet<>();
-        for (BlockPos receiverPos : receiverIndex.getAll(level.dimension())) {
+        for (BlockPos receiverPos : receiverIndex.getAll()) {
             for (DuctNetwork network : networks) {
                 if (network.canPotentiallyReach(receiverPos, maxPropagationCost)) {
                     receivers.add(receiverPos.immutable());
@@ -253,7 +247,6 @@ public class DuctNetworkManager {
             return null;
         }
 
-        LevelCache cache = getLevelCache(level.dimension());
         DuctNetwork network = cache.posToNetwork.get(ductPos);
         if (network != null) {
             return network;
@@ -329,10 +322,6 @@ public class DuctNetworkManager {
         for (BlockPos pos : network.positions()) {
             cache.posToNetwork.remove(pos, network);
         }
-    }
-
-    private LevelCache getLevelCache(ResourceKey<Level> level) {
-        return caches.computeIfAbsent(level, ignored -> new LevelCache());
     }
 
     private void collectAdjacentInterfaces(Level level, BlockPos ductPos, Set<BlockPos> positionSet, Set<DuctInterfaceEndpoint> interfaceEndpoints) {

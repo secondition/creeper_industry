@@ -13,19 +13,22 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class ContinuousSignalPropagationService {
     private final ContinuousSignalSourceRepository repository;
     private final SignalContributionAggregator aggregator;
+    private final DuctNetworkManager ductNetworkManager;
 
     public ContinuousSignalPropagationService(
             ContinuousSignalSourceRepository repository,
-            SignalContributionAggregator aggregator
+            SignalContributionAggregator aggregator,
+            DuctNetworkManager ductNetworkManager
     ) {
         this.repository = repository;
         this.aggregator = aggregator;
+        this.ductNetworkManager = ductNetworkManager;
     }
 
     public List<DeliveredSignal> collectContributions(Level level, BlockPos targetPos, long gameTime) {
         List<DeliveredSignal> contributions = new ArrayList<>();
-        for (ContinuousSignalSource source : repository.getActiveSources(level.dimension())) {
-            SignalReach reach = SignalReachEvaluator.evaluate(level, source, targetPos);
+        for (ContinuousSignalSource source : repository.getActiveSources()) {
+            SignalReach reach = SignalReachEvaluator.evaluate(ductNetworkManager, level, source, targetPos);
             if (reach != null) {
                 contributions.add(new DeliveredSignal(
                         source,

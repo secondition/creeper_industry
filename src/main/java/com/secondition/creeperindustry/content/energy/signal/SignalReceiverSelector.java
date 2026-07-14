@@ -2,16 +2,16 @@ package com.secondition.creeperindustry.content.energy.signal;
 
 import java.util.Collection;
 
-import com.secondition.creeperindustry.CISignalSourceTypes;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 public class SignalReceiverSelector {
     private final SignalReceiverIndex receiverIndex;
+    private final DuctNetworkManager ductNetworkManager;
 
-    public SignalReceiverSelector(SignalReceiverIndex receiverIndex) {
+    public SignalReceiverSelector(SignalReceiverIndex receiverIndex, DuctNetworkManager ductNetworkManager) {
         this.receiverIndex = receiverIndex;
+        this.ductNetworkManager = ductNetworkManager;
     }
 
     public Collection<BlockPos> getPotentialTargets(Level level, SignalSource source) {
@@ -20,7 +20,7 @@ public class SignalReceiverSelector {
             return java.util.List.of();
         }
 
-        return CISignalSourceTypes.ductNetworkManager().getPotentialTargets(
+        return ductNetworkManager.getPotentialTargets(
                 level,
                 source.position(),
                 maxDistance

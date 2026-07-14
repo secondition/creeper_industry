@@ -6,12 +6,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.level.Level;
-
 public class InMemorySignalSourceRepository implements SignalSourceRepository {
     private final Map<SignalSourceType<?>, SignalSourceType<?>> registeredTypes = new ConcurrentHashMap<>();
-    private final Map<SignalCollectionKey, List<SignalSource>> activeSources = new ConcurrentHashMap<>();
+    private final Map<Long, List<SignalSource>> activeSources = new ConcurrentHashMap<>();
 
     @Override
     public <T extends SignalSource> SignalSourceType<T> registerType(SignalSourceType<T> type) {
@@ -30,8 +27,7 @@ public class InMemorySignalSourceRepository implements SignalSourceRepository {
             throw new IllegalArgumentException("Signal source type is not registered: " + source.type().id());
         }
 
-        SignalCollectionKey key = new SignalCollectionKey(source.level(), source.gameTime());
-        activeSources.computeIfAbsent(key, ignored -> new CopyOnWriteArrayList<>()).add(source);
+        activeSources.computeIfAbsent(source.gameTime(), ignored -> new CopyOnWriteArrayList<>()).add(source);
     }
 
     @Override
@@ -40,9 +36,8 @@ public class InMemorySignalSourceRepository implements SignalSourceRepository {
     }
 
     @Override
-    public Collection<SignalSource> getActiveSources(ResourceKey<Level> level, long gameTime) {
-        SignalCollectionKey key = new SignalCollectionKey(level, gameTime);
-        List<SignalSource> sources = activeSources.get(key);
+    public Collection<SignalSource> getActiveSources(long gameTime) {
+        List<SignalSource> sources = activeSources.get(gameTime);
         if (sources == null) {
             return List.of();
         }
@@ -50,9 +45,8 @@ public class InMemorySignalSourceRepository implements SignalSourceRepository {
     }
 
     @Override
-    public Collection<SignalSource> removeActiveSources(ResourceKey<Level> level, long gameTime) {
-        SignalCollectionKey key = new SignalCollectionKey(level, gameTime);
-        List<SignalSource> removed = activeSources.remove(key);
+    public Collection<SignalSource> removeActiveSources(long gameTime) {
+        List<SignalSource> removed = activeSources.remove(gameTime);
         if (removed == null) {
             return List.of();
         }
@@ -60,10 +54,7 @@ public class InMemorySignalSourceRepository implements SignalSourceRepository {
     }
 
     @Override
-    public void clearLevel(ResourceKey<Level> level) {
-        activeSources.keySet().removeIf(key -> key.level().equals(level));
-    }
-
-    private record SignalCollectionKey(ResourceKey<Level> level, long gameTime) {
+    public void clear() {
+        activeSources.clear();
     }
 }

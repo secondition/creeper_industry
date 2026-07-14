@@ -2,58 +2,102 @@ package com.secondition.creeperindustry.content.energy.signal;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class ContinuousSignalUpdateService {
     private final ContinuousSignalSourceRepository repository;
     private final SignalReceiverIndex receiverIndex;
     private final SignalReceiverSelector receiverSelector;
     private final UnifiedSignalRefreshService refreshService;
+    private final DeferredSignalRefreshQueue deferredRefreshQueue;
+    private final Set<BlockPos> continuouslyDrivenTargets = ConcurrentHashMap.newKeySet();
 
     public ContinuousSignalUpdateService(
             ContinuousSignalSourceRepository repository,
             SignalReceiverIndex receiverIndex,
             SignalReceiverSelector receiverSelector,
-            UnifiedSignalRefreshService refreshService
+            UnifiedSignalRefreshService refreshService,
+            DeferredSignalRefreshQueue deferredRefreshQueue
     ) {
         this.repository = repository;
         this.receiverIndex = receiverIndex;
         this.receiverSelector = receiverSelector;
         this.refreshService = refreshService;
+        this.deferredRefreshQueue = deferredRefreshQueue;
     }
 
     public void upsert(Level level, ContinuousSignalSource source) {
         Collection<BlockPos> receiverPositions = new LinkedHashSet<>();
-        repository.get(level.dimension(), source.id())
+        repository.get(source.id())
                 .ifPresent(previousSource -> receiverPositions.addAll(receiverSelector.getPotentialTargets(level, previousSource)));
 
         repository.put(source);
         receiverPositions.addAll(receiverSelector.getPotentialTargets(level, source));
-        refreshReceivers(level, receiverPositions);
+        rebuildContinuouslyDrivenTargets(level);
+        scheduleReceivers(receiverPositions);
     }
 
     public void remove(Level level, UUID sourceId) {
-        repository.remove(level.dimension(), sourceId)
-                .ifPresent(source -> refreshAffectedReceivers(level, source));
+        repository.remove(sourceId).ifPresent(source -> {
+            Collection<BlockPos> affectedReceivers = receiverSelector.getPotentialTargets(level, source);
+            rebuildContinuouslyDrivenTargets(level);
+            scheduleReceivers(affectedReceivers);
+        });
     }
 
-    public void removeWithoutRefresh(Level level, UUID sourceId) {
-        repository.remove(level.dimension(), sourceId);
+    public void registerReceiver(Level level, BlockPos receiverPos) {
+        receiverIndex.register(receiverPos);
+        rebuildContinuouslyDrivenTargets(level);
+        if (continuouslyDrivenTargets.contains(receiverPos)) {
+            deferredRefreshQueue.enqueue(java.util.List.of(receiverPos));
+        }
     }
 
-    public void refreshAllReceivers(Level level) {
-        refreshReceivers(level, receiverIndex.getAll(level.dimension()));
+    public void unregisterReceiver(BlockPos receiverPos) {
+        receiverIndex.unregister(receiverPos);
+        continuouslyDrivenTargets.remove(receiverPos);
     }
 
-    public void refreshReceivers(Level level, Collection<BlockPos> receiverPositions) {
-        refreshService.refreshTargets(level, receiverPositions);
+    public void rebuildContinuouslyDrivenTargets(Level level) {
+        LinkedHashSet<BlockPos> rebuiltTargets = new LinkedHashSet<>();
+        for (ContinuousSignalSource source : repository.getActiveSources()) {
+            rebuiltTargets.addAll(receiverSelector.getPotentialTargets(level, source));
+        }
+        continuouslyDrivenTargets.clear();
+        continuouslyDrivenTargets.addAll(rebuiltTargets);
     }
 
-    private void refreshAffectedReceivers(Level level, ContinuousSignalSource source) {
-        Collection<BlockPos> receiverPositions = receiverSelector.getPotentialTargets(level, source);
-        refreshReceivers(level, receiverPositions);
+    public Collection<BlockPos> continuouslyDrivenTargets() {
+        return java.util.List.copyOf(continuouslyDrivenTargets);
+    }
+
+    private void scheduleReceivers(Collection<BlockPos> receiverPositions) {
+        deferredRefreshQueue.enqueue(receiverPositions);
+    }
+
+    public void refreshScheduledReceivers(ServerLevel level, Collection<BlockPos> receiverPositions) {
+        for (BlockPos receiverPos : receiverPositions) {
+            if (!level.hasChunkAt(receiverPos)) {
+                continue;
+            }
+
+            BlockEntity blockEntity = level.getBlockEntity(receiverPos);
+            if (!(blockEntity instanceof SignalReceiver)) {
+                unregisterReceiver(receiverPos);
+                continue;
+            }
+            refreshService.refreshTarget(level, receiverPos);
+        }
+    }
+
+    public void clear() {
+        continuouslyDrivenTargets.clear();
     }
 }
