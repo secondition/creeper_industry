@@ -38,7 +38,7 @@ public class BiosphereScreen extends AbstractContainerScreen<BiosphereMenu> {
         guiGraphics.fill(panelLeft + 4, panelTop + 78, panelRight - 4, panelBottom - 4, 0xFF2A2521);
 
         drawSlot(guiGraphics, leftPos + 43, topPos + 34);
-        if (menu.getBiosphereType() == BiosphereType.BOTANICAL) {
+        if (menu.getBiosphereType() != BiosphereType.MONSTER) {
             drawSlot(guiGraphics, leftPos + 79, topPos + 34);
         }
         drawSlot(guiGraphics, leftPos + 115, topPos + 34);
@@ -56,27 +56,37 @@ public class BiosphereScreen extends AbstractContainerScreen<BiosphereMenu> {
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(font, title, 8, 7, 0xF4F1E8, false);
-        if (menu.getBiosphereType() == BiosphereType.MONSTER) {
-            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.spawn_egg"), 29, 22, 0xD5D0C6, false);
-            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.drop"), 116, 22, 0xD5D0C6, false);
-            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.monster_hint"), 8, 48, 0xB8D7C9, false);
-            guiGraphics.drawString(font, getMonsterSelectionLine(), 8, 58, 0xD5D0C6, false);
-        } else {
-            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.sapling"), 33, 22, 0xD5D0C6, false);
-            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.bonemeal"), 67, 22, 0xD5D0C6, false);
-            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.output"), 117, 22, 0xD5D0C6, false);
-            guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.signal_hint"), 8, 58, 0xB8D7C9, false);
+        switch (menu.getBiosphereType()) {
+            case BOTANICAL -> {
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.sapling"), 33, 22, 0xD5D0C6, false);
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.bonemeal"), 67, 22, 0xD5D0C6, false);
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.output"), 117, 22, 0xD5D0C6, false);
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.signal_hint"), 8, 58, 0xB8D7C9, false);
+            }
+            case ZOOLOGICAL -> {
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.animal_template"), 25, 22, 0xD5D0C6, false);
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.feed"), 73, 22, 0xD5D0C6, false);
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.animal_product"), 110, 22, 0xD5D0C6, false);
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.zoological_hint"), 8, 48, 0xB8D7C9, false);
+                guiGraphics.drawString(font, getSelectionLine(), 8, 58, 0xD5D0C6, false);
+            }
+            case MONSTER -> {
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.spawn_egg"), 29, 22, 0xD5D0C6, false);
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.drop"), 116, 22, 0xD5D0C6, false);
+                guiGraphics.drawString(font, Component.translatable("gui.creeper_industry.biosphere.monster_hint"), 8, 48, 0xB8D7C9, false);
+                guiGraphics.drawString(font, getSelectionLine(), 8, 58, 0xD5D0C6, false);
+            }
         }
         guiGraphics.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY, 0xD5D0C6, false);
     }
 
-    private Component getMonsterSelectionLine() {
+    private Component getSelectionLine() {
         BiosphereBlockEntity biosphere = menu.getBiosphereBlockEntity();
         if (biosphere == null) {
             return Component.translatable("gui.creeper_industry.biosphere.no_output");
         }
 
-        ItemStack preview = biosphere.getSelectedMonsterOutputPreview();
+        ItemStack preview = biosphere.getSelectedOutputPreview();
         if (preview.isEmpty()) {
             return Component.translatable("gui.creeper_industry.biosphere.no_output");
         }

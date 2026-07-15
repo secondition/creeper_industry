@@ -3,6 +3,7 @@ package com.secondition.creeperindustry.content.production.biosphere;
 import javax.annotation.Nullable;
 
 import com.secondition.creeperindustry.CIMenuTypes;
+import com.secondition.creeperindustry.content.production.biosphere.recipe.BiosphereRecipeService;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -17,8 +18,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 public class BiosphereMenu extends AbstractContainerMenu {
-    private static final int SAPLING_SLOT_INDEX = 0;
-    private static final int BONE_MEAL_SLOT_INDEX = 1;
+    private static final int TEMPLATE_SLOT_INDEX = 0;
+    private static final int CATALYST_SLOT_INDEX = 1;
     private static final int OUTPUT_SLOT_INDEX = 2;
     private static final int MACHINE_SLOT_COUNT = 3;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
@@ -48,17 +49,24 @@ public class BiosphereMenu extends AbstractContainerMenu {
         this.biosphere = biosphere;
         this.biosphereType = biosphereType;
 
-        addSlot(new Slot(biosphere, SAPLING_SLOT_INDEX, 44, 35) {
+        addSlot(new Slot(biosphere, TEMPLATE_SLOT_INDEX, 44, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return BiosphereBlockEntity.isValidPrimaryInput(BiosphereMenu.this.biosphereType, stack);
+                return BiosphereRecipeService.isValidTemplate(
+                        playerInventory.player.level(),
+                        BiosphereMenu.this.biosphereType,
+                        stack
+                );
             }
         });
-        addSlot(new Slot(biosphere, BONE_MEAL_SLOT_INDEX, 80, 35) {
+        addSlot(new Slot(biosphere, CATALYST_SLOT_INDEX, 80, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return BiosphereMenu.this.biosphereType == BiosphereType.BOTANICAL
-                        && BiosphereBlockEntity.isValidBoneMeal(stack);
+                return BiosphereRecipeService.isValidCatalyst(
+                        playerInventory.player.level(),
+                        BiosphereMenu.this.biosphereType,
+                        stack
+                );
             }
         });
         addSlot(new Slot(biosphere, OUTPUT_SLOT_INDEX, 116, 35) {
@@ -95,12 +103,12 @@ public class BiosphereMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stackInSlot, PLAYER_INV_START, HOTBAR_END, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (BiosphereBlockEntity.isValidPrimaryInput(biosphereType, stackInSlot)) {
-            if (!moveItemStackTo(stackInSlot, SAPLING_SLOT_INDEX, SAPLING_SLOT_INDEX + 1, false)) {
+        } else if (BiosphereRecipeService.isValidTemplate(player.level(), biosphereType, stackInSlot)) {
+            if (!moveItemStackTo(stackInSlot, TEMPLATE_SLOT_INDEX, TEMPLATE_SLOT_INDEX + 1, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (biosphereType == BiosphereType.BOTANICAL && BiosphereBlockEntity.isValidBoneMeal(stackInSlot)) {
-            if (!moveItemStackTo(stackInSlot, BONE_MEAL_SLOT_INDEX, BONE_MEAL_SLOT_INDEX + 1, false)) {
+        } else if (BiosphereRecipeService.isValidCatalyst(player.level(), biosphereType, stackInSlot)) {
+            if (!moveItemStackTo(stackInSlot, CATALYST_SLOT_INDEX, CATALYST_SLOT_INDEX + 1, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (index < PLAYER_INV_END) {

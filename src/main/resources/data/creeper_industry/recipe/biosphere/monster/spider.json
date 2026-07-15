@@ -1,0 +1,13 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "monster",
+  "template": [
+    { "item": "minecraft:spider_spawn_egg" },
+    { "item": "minecraft:cave_spider_spawn_egg" }
+  ],
+  "outputs": [
+    { "id": "minecraft:string", "count": 1 },
+    { "id": "minecraft:spider_eye", "count": 1 }
+  ],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}

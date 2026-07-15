@@ -1,12 +1,13 @@
 package com.secondition.creeperindustry.content.production.biosphere;
 
-import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 import com.secondition.creeperindustry.CIBlockEntityTypes;
 import com.secondition.creeperindustry.content.energy.signal.AggregatedSignal;
 import com.secondition.creeperindustry.content.energy.signal.SignalReceiver;
 import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntimeAccess;
+import com.secondition.creeperindustry.content.production.biosphere.recipe.BiosphereCultivationRecipe;
+import com.secondition.creeperindustry.content.production.biosphere.recipe.BiosphereRecipeService;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -27,68 +28,21 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class BiosphereBlockEntity extends BlockEntity implements Container, MenuProvider, SignalReceiver, WorldlyContainer {
-    public static final int SAPLING_SLOT = 0;
-    public static final int BONE_MEAL_SLOT = 1;
+    public static final int TEMPLATE_SLOT = 0;
+    public static final int CATALYST_SLOT = 1;
     public static final int OUTPUT_SLOT = 2;
     public static final int SLOT_COUNT = 3;
 
-    private static final int SIGNAL_THRESHOLD = 8;
-    private static final int[] BOTANICAL_INPUT_SLOTS = {SAPLING_SLOT, BONE_MEAL_SLOT};
-    private static final int[] MONSTER_INPUT_SLOTS = {SAPLING_SLOT};
+    private static final int[] INPUT_SLOTS = {TEMPLATE_SLOT, CATALYST_SLOT};
     private static final int[] OUTPUT_SLOTS = {OUTPUT_SLOT};
-    private static final Map<Item, ItemStack> BOTANICAL_OUTPUTS = Map.ofEntries(
-            Map.entry(Blocks.OAK_SAPLING.asItem(), new ItemStack(Blocks.OAK_LOG)),
-            Map.entry(Blocks.SPRUCE_SAPLING.asItem(), new ItemStack(Blocks.SPRUCE_LOG)),
-            Map.entry(Blocks.BIRCH_SAPLING.asItem(), new ItemStack(Blocks.BIRCH_LOG)),
-            Map.entry(Blocks.JUNGLE_SAPLING.asItem(), new ItemStack(Blocks.JUNGLE_LOG)),
-            Map.entry(Blocks.ACACIA_SAPLING.asItem(), new ItemStack(Blocks.ACACIA_LOG)),
-            Map.entry(Blocks.DARK_OAK_SAPLING.asItem(), new ItemStack(Blocks.DARK_OAK_LOG)),
-            Map.entry(Blocks.CHERRY_SAPLING.asItem(), new ItemStack(Blocks.CHERRY_LOG)),
-            Map.entry(Blocks.MANGROVE_PROPAGULE.asItem(), new ItemStack(Blocks.MANGROVE_LOG)),
-            Map.entry(Blocks.AZALEA.asItem(), new ItemStack(Blocks.OAK_LOG)),
-            Map.entry(Blocks.FLOWERING_AZALEA.asItem(), new ItemStack(Blocks.OAK_LOG))
-    );
-    private static final Map<Item, List<Item>> MONSTER_OUTPUTS = Map.ofEntries(
-            Map.entry(Items.CREEPER_SPAWN_EGG, List.of(Items.GUNPOWDER)),
-            Map.entry(Items.SKELETON_SPAWN_EGG, List.of(Items.BONE)),
-            Map.entry(Items.STRAY_SPAWN_EGG, List.of(Items.BONE)),
-            Map.entry(Items.WITHER_SKELETON_SPAWN_EGG, List.of(Items.BONE, Items.COAL)),
-            Map.entry(Items.SPIDER_SPAWN_EGG, List.of(Items.STRING, Items.SPIDER_EYE)),
-            Map.entry(Items.CAVE_SPIDER_SPAWN_EGG, List.of(Items.STRING, Items.SPIDER_EYE)),
-            Map.entry(Items.ZOMBIE_SPAWN_EGG, List.of(Items.ROTTEN_FLESH)),
-            Map.entry(Items.HUSK_SPAWN_EGG, List.of(Items.ROTTEN_FLESH)),
-            Map.entry(Items.DROWNED_SPAWN_EGG, List.of(Items.ROTTEN_FLESH)),
-            Map.entry(Items.ZOMBIE_VILLAGER_SPAWN_EGG, List.of(Items.ROTTEN_FLESH)),
-            Map.entry(Items.ZOMBIFIED_PIGLIN_SPAWN_EGG, List.of(Items.ROTTEN_FLESH)),
-            Map.entry(Items.SLIME_SPAWN_EGG, List.of(Items.SLIME_BALL)),
-            Map.entry(Items.MAGMA_CUBE_SPAWN_EGG, List.of(Items.MAGMA_CREAM)),
-            Map.entry(Items.ENDERMAN_SPAWN_EGG, List.of(Items.ENDER_PEARL)),
-            Map.entry(Items.BLAZE_SPAWN_EGG, List.of(Items.BLAZE_ROD)),
-            Map.entry(Items.GHAST_SPAWN_EGG, List.of(Items.GUNPOWDER)),
-            Map.entry(Items.PHANTOM_SPAWN_EGG, List.of(Items.PHANTOM_MEMBRANE)),
-            Map.entry(Items.SHULKER_SPAWN_EGG, List.of(Items.SHULKER_SHELL)),
-            Map.entry(Items.GUARDIAN_SPAWN_EGG, List.of(Items.PRISMARINE_SHARD)),
-            Map.entry(Items.ELDER_GUARDIAN_SPAWN_EGG, List.of(Items.PRISMARINE_SHARD)),
-            Map.entry(Items.WITCH_SPAWN_EGG, List.of(
-                    Items.GLASS_BOTTLE,
-                    Items.GLOWSTONE_DUST,
-                    Items.GUNPOWDER,
-                    Items.REDSTONE,
-                    Items.SPIDER_EYE,
-                    Items.STICK,
-                    Items.SUGAR
-            ))
-    );
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
     private final ContainerData dataAccess = new ContainerData() {
@@ -109,7 +63,7 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
 
     private boolean signalActive;
     private long lastProductionGameTime = Long.MIN_VALUE;
-    private int selectedMonsterOutputIndex;
+    private int selectedOutputIndex;
 
     public BiosphereBlockEntity(BlockPos pos, BlockState blockState) {
         super(CIBlockEntityTypes.BIOSPHERE.get(), pos, blockState);
@@ -124,15 +78,17 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         if (controller != this) {
             return controller.getDisplayedPrimaryInput();
         }
-        return items.get(SAPLING_SLOT);
+        return items.get(TEMPLATE_SLOT);
     }
 
-    public ItemStack getSelectedMonsterOutputPreview() {
+    public ItemStack getSelectedOutputPreview() {
         BiosphereBlockEntity controller = getInventoryController();
         if (controller != this) {
-            return controller.getSelectedMonsterOutputPreview();
+            return controller.getSelectedOutputPreview();
         }
-        return controller.resolveMonsterResult(controller.items.get(SAPLING_SLOT));
+        return controller.findTemplateRecipe()
+                .map(holder -> holder.value().selectedOutput(selectedOutputIndex))
+                .orElse(ItemStack.EMPTY);
     }
 
     public BiosphereType getBiosphereType() {
@@ -256,20 +212,13 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         if (controller != this) {
             return controller.canPlaceItem(slot, stack);
         }
-
-        return switch (getBiosphereType()) {
-            case BOTANICAL -> switch (slot) {
-                case SAPLING_SLOT -> isValidSapling(stack);
-                case BONE_MEAL_SLOT -> isValidBoneMeal(stack);
-                case OUTPUT_SLOT -> false;
-                default -> false;
-            };
-            case MONSTER -> switch (slot) {
-                case SAPLING_SLOT -> isValidMonsterEgg(stack);
-                case BONE_MEAL_SLOT, OUTPUT_SLOT -> false;
-                default -> false;
-            };
-            case ZOOLOGICAL -> false;
+        if (level == null || stack.isEmpty()) {
+            return false;
+        }
+        return switch (slot) {
+            case TEMPLATE_SLOT -> BiosphereRecipeService.isValidTemplate(level, getBiosphereType(), stack);
+            case CATALYST_SLOT -> BiosphereRecipeService.isValidCatalyst(level, getBiosphereType(), stack);
+            default -> false;
         };
     }
 
@@ -284,7 +233,7 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         for (int i = 0; i < items.size(); i++) {
             items.set(i, ItemStack.EMPTY);
         }
-        selectedMonsterOutputIndex = 0;
+        selectedOutputIndex = 0;
         setChanged();
     }
 
@@ -294,10 +243,11 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         signalActive = false;
         if (isControllerPart()) {
             ContainerHelper.loadAllItems(tag, items, registries);
-            selectedMonsterOutputIndex = Math.max(tag.getInt("SelectedMonsterOutput"), 0);
-            normalizeMonsterSelection();
+            selectedOutputIndex = tag.contains("SelectedOutput")
+                    ? Math.max(tag.getInt("SelectedOutput"), 0)
+                    : Math.max(tag.getInt("SelectedMonsterOutput"), 0);
         } else {
-            selectedMonsterOutputIndex = 0;
+            selectedOutputIndex = 0;
         }
     }
 
@@ -306,7 +256,7 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         super.saveAdditional(tag, registries);
         if (isControllerPart()) {
             ContainerHelper.saveAllItems(tag, items, registries);
-            tag.putInt("SelectedMonsterOutput", selectedMonsterOutputIndex);
+            tag.putInt("SelectedOutput", selectedOutputIndex);
         }
     }
 
@@ -332,6 +282,9 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
     public void onLoad() {
         super.onLoad();
         registerReceiver();
+        if (isControllerPart()) {
+            normalizeOutputSelection();
+        }
     }
 
     @Override
@@ -348,7 +301,14 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
 
     @Override
     public void receiveSignal(AggregatedSignal signal) {
-        boolean strongSignal = isProductionSignal(signal);
+        BiosphereBlockEntity controller = getInventoryController();
+        boolean strongSignal = level != null
+                && BiosphereRecipeService.hasMatchingSignal(
+                        level,
+                        controller.getBiosphereType(),
+                        controller.items.get(TEMPLATE_SLOT),
+                        signal
+                );
         if (strongSignal && !signalActive) {
             signalActive = true;
             tryTriggerProduction();
@@ -370,12 +330,7 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         if (direction == Direction.DOWN) {
             return OUTPUT_SLOTS;
         }
-
-        return switch (getBiosphereType()) {
-            case BOTANICAL -> BOTANICAL_INPUT_SLOTS;
-            case MONSTER -> MONSTER_INPUT_SLOTS;
-            case ZOOLOGICAL -> BOTANICAL_INPUT_SLOTS;
-        };
+        return INPUT_SLOTS;
     }
 
     @Override
@@ -388,16 +343,11 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         return direction == Direction.DOWN && slot == OUTPUT_SLOT;
     }
 
-    private boolean canProcessSignalTrigger() {
-        if (!supportsSignalProduction()) {
-            return false;
-        }
-        if (getBiosphereType() == BiosphereType.BOTANICAL && !isValidBoneMeal(items.get(BONE_MEAL_SLOT))) {
-            return false;
-        }
-
-        ItemStack result = resolveProductionResult();
+    private boolean canProcessSignalTrigger(BiosphereCultivationRecipe recipe, ItemStack result) {
         if (result.isEmpty()) {
+            return false;
+        }
+        if (recipe.catalyst().isPresent() && !recipe.catalyst().get().matches(items.get(CATALYST_SLOT))) {
             return false;
         }
 
@@ -411,31 +361,6 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         return output.getCount() + result.getCount() <= output.getMaxStackSize();
     }
 
-    public static boolean isValidBoneMeal(ItemStack stack) {
-        return stack.is(Items.BONE_MEAL);
-    }
-
-    public static boolean isValidSapling(ItemStack stack) {
-        return BOTANICAL_OUTPUTS.containsKey(stack.getItem());
-    }
-
-    public static boolean isValidMonsterEgg(ItemStack stack) {
-        return MONSTER_OUTPUTS.containsKey(stack.getItem());
-    }
-
-    public static boolean isValidPrimaryInput(BiosphereType type, ItemStack stack) {
-        return switch (type) {
-            case BOTANICAL -> isValidSapling(stack);
-            case MONSTER -> isValidMonsterEgg(stack);
-            case ZOOLOGICAL -> false;
-        };
-    }
-
-    public static ItemStack getBotanicalResult(ItemStack saplingStack) {
-        ItemStack result = BOTANICAL_OUTPUTS.get(saplingStack.getItem());
-        return result == null ? ItemStack.EMPTY : result.copy();
-    }
-
     private void tryTriggerProduction() {
         BiosphereBlockEntity controller = getInventoryController();
         if (controller != this) {
@@ -443,23 +368,28 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
             return;
         }
 
-        if (!canProcessSignalTrigger()) {
+        Optional<RecipeHolder<BiosphereCultivationRecipe>> recipeHolder = findCurrentRecipe();
+        if (recipeHolder.isEmpty()) {
+            return;
+        }
+        BiosphereCultivationRecipe recipe = recipeHolder.get().value();
+        ItemStack result = recipe.selectedOutput(selectedOutputIndex);
+        if (!canProcessSignalTrigger(recipe, result)) {
             return;
         }
 
-        ItemStack result = resolveProductionResult();
         ItemStack output = items.get(OUTPUT_SLOT);
         if (level != null && lastProductionGameTime == level.getGameTime()) {
             return;
         }
 
-        if (getBiosphereType() == BiosphereType.BOTANICAL) {
-            ItemStack boneMeal = items.get(BONE_MEAL_SLOT);
-            boneMeal.shrink(1);
-            if (boneMeal.isEmpty()) {
-                items.set(BONE_MEAL_SLOT, ItemStack.EMPTY);
+        recipe.catalyst().ifPresent(catalyst -> {
+            ItemStack catalystStack = items.get(CATALYST_SLOT);
+            catalystStack.shrink(catalyst.count());
+            if (catalystStack.isEmpty()) {
+                items.set(CATALYST_SLOT, ItemStack.EMPTY);
             }
-        }
+        });
 
         if (output.isEmpty()) {
             items.set(OUTPUT_SLOT, result.copy());
@@ -471,12 +401,6 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
             lastProductionGameTime = level.getGameTime();
         }
         setChanged();
-    }
-
-    private boolean isProductionSignal(AggregatedSignal signal) {
-        return supportsSignalProduction()
-                && signal.signal().amplitude() > SIGNAL_THRESHOLD
-                && signal.instantaneousValue() > 0;
     }
 
     private boolean isControllerPart() {
@@ -505,7 +429,7 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         if (level == null || level.isClientSide()) {
             return;
         }
-        SignalRuntimeAccess.get(level).registerReceiver(level, worldPosition);
+        SignalRuntimeAccess.get(level).registerReceiver(worldPosition);
     }
 
     private void unregisterReceiver() {
@@ -515,81 +439,74 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         SignalRuntimeAccess.getExisting(level).ifPresent(runtime -> runtime.unregisterReceiver(worldPosition));
     }
 
-    public boolean cycleMonsterOutputSelection(Player player) {
+    public boolean cycleOutputSelection(Player player) {
         BiosphereBlockEntity controller = getInventoryController();
         if (controller != this) {
-            return controller.cycleMonsterOutputSelection(player);
+            return controller.cycleOutputSelection(player);
         }
 
-        if (getBiosphereType() != BiosphereType.MONSTER) {
+        if (getBiosphereType() == BiosphereType.BOTANICAL) {
             return false;
         }
 
-        List<Item> options = getMonsterOutputOptions(items.get(SAPLING_SLOT));
-        if (options.isEmpty()) {
+        Optional<RecipeHolder<BiosphereCultivationRecipe>> recipe = findTemplateRecipe();
+        if (recipe.isEmpty() || recipe.get().value().outputs().isEmpty()) {
             player.displayClientMessage(Component.translatable(
-                    "message.creeper_industry.monster_biosphere.no_output"
+                    "message.creeper_industry.biosphere.no_output"
             ).withStyle(ChatFormatting.RED), false);
             return true;
         }
 
-        selectedMonsterOutputIndex = Math.floorMod(selectedMonsterOutputIndex + 1, options.size());
+        selectedOutputIndex = Math.floorMod(selectedOutputIndex + 1, recipe.get().value().outputs().size());
         setChanged();
         player.displayClientMessage(Component.translatable(
-                "message.creeper_industry.monster_biosphere.selected_drop",
-                resolveMonsterResult(items.get(SAPLING_SLOT)).getHoverName()
+                "message.creeper_industry.biosphere.selected_output",
+                recipe.get().value().selectedOutput(selectedOutputIndex).getHoverName()
         ).withStyle(ChatFormatting.AQUA), false);
         return true;
     }
 
-    private boolean supportsSignalProduction() {
-        return getBiosphereType() == BiosphereType.BOTANICAL
-                || getBiosphereType() == BiosphereType.MONSTER;
-    }
-
-    private ItemStack resolveProductionResult() {
-        return switch (getBiosphereType()) {
-            case BOTANICAL -> getBotanicalResult(items.get(SAPLING_SLOT));
-            case MONSTER -> resolveMonsterResult(items.get(SAPLING_SLOT));
-            case ZOOLOGICAL -> ItemStack.EMPTY;
-        };
-    }
-
-    private ItemStack resolveMonsterResult(ItemStack spawnEggStack) {
-        List<Item> options = getMonsterOutputOptions(spawnEggStack);
-        if (options.isEmpty()) {
-            return ItemStack.EMPTY;
-        }
-
-        int index = Math.floorMod(selectedMonsterOutputIndex, options.size());
-        return new ItemStack(options.get(index));
-    }
-
     private void normalizeSelectionAfterInventoryChange(int slot) {
-        if (slot == SAPLING_SLOT) {
-            normalizeMonsterSelection();
+        if (slot == TEMPLATE_SLOT || slot == CATALYST_SLOT) {
+            normalizeOutputSelection();
         }
     }
 
-    private void normalizeMonsterSelection() {
-        if (getBiosphereType() != BiosphereType.MONSTER) {
-            selectedMonsterOutputIndex = 0;
+    private void normalizeOutputSelection() {
+        if (level == null || getBiosphereType() == BiosphereType.BOTANICAL) {
+            selectedOutputIndex = 0;
             return;
         }
 
-        List<Item> options = getMonsterOutputOptions(items.get(SAPLING_SLOT));
-        if (options.isEmpty()) {
-            selectedMonsterOutputIndex = 0;
+        Optional<RecipeHolder<BiosphereCultivationRecipe>> recipe = findTemplateRecipe();
+        if (recipe.isEmpty() || recipe.get().value().outputs().isEmpty()) {
+            selectedOutputIndex = 0;
             return;
         }
 
-        selectedMonsterOutputIndex = Math.floorMod(selectedMonsterOutputIndex, options.size());
+        selectedOutputIndex = Math.floorMod(selectedOutputIndex, recipe.get().value().outputs().size());
     }
 
-    private static List<Item> getMonsterOutputOptions(ItemStack spawnEggStack) {
-        if (spawnEggStack.isEmpty()) {
-            return List.of();
+    private Optional<RecipeHolder<BiosphereCultivationRecipe>> findCurrentRecipe() {
+        if (level == null) {
+            return Optional.empty();
         }
-        return MONSTER_OUTPUTS.getOrDefault(spawnEggStack.getItem(), List.of());
+        return BiosphereRecipeService.findRecipe(
+                level,
+                getBiosphereType(),
+                items.get(TEMPLATE_SLOT),
+                items.get(CATALYST_SLOT)
+        );
+    }
+
+    private Optional<RecipeHolder<BiosphereCultivationRecipe>> findTemplateRecipe() {
+        if (level == null) {
+            return Optional.empty();
+        }
+        return BiosphereRecipeService.findRecipeForTemplate(
+                level,
+                getBiosphereType(),
+                items.get(TEMPLATE_SLOT)
+        );
     }
 }

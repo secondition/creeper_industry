@@ -1,0 +1,15 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "zoological",
+  "template": { "item": "minecraft:chicken_spawn_egg" },
+  "catalyst": {
+    "ingredient": { "item": "minecraft:wheat_seeds" },
+    "count": 1
+  },
+  "outputs": [
+    { "id": "minecraft:egg", "count": 1 },
+    { "id": "minecraft:feather", "count": 1 },
+    { "id": "minecraft:chicken", "count": 1 }
+  ],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}

@@ -23,6 +23,7 @@ public class CreeperIndustry {
         CIEntityTypes.register(modEventBus);
         CIMenuTypes.register(modEventBus);
         CIRecipeTypes.register(modEventBus);
+        CIRecipeSerializers.register(modEventBus);
         CIAttachmentTypes.register(modEventBus);
         CIDataComponents.register(modEventBus);
 

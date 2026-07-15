@@ -93,8 +93,8 @@ public final class SignalRuntime implements AutoCloseable {
         return refreshService;
     }
 
-    public void registerReceiver(Level level, BlockPos receiverPos) {
-        continuousUpdateService.registerReceiver(level, receiverPos);
+    public void registerReceiver(BlockPos receiverPos) {
+        continuousUpdateService.registerReceiver(receiverPos);
     }
 
     public void unregisterReceiver(BlockPos receiverPos) {
@@ -114,6 +114,7 @@ public final class SignalRuntime implements AutoCloseable {
             aggregationService.clearThroughTick(staleThroughTick);
             refreshTargets.addAll(transientImpactTracker.popAffectedTargetsThroughTick(staleThroughTick));
         }
+        continuousUpdateService.rebuildContinuouslyDrivenTargetsIfNeeded(level);
         refreshTargets.addAll(deferredRefreshQueue.drain());
         refreshTargets.addAll(continuousUpdateService.continuouslyDrivenTargets());
         continuousUpdateService.refreshScheduledReceivers(level, refreshTargets);

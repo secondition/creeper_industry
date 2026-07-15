@@ -1,0 +1,13 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "monster",
+  "template": [
+    { "item": "minecraft:zombie_spawn_egg" },
+    { "item": "minecraft:husk_spawn_egg" },
+    { "item": "minecraft:drowned_spawn_egg" },
+    { "item": "minecraft:zombie_villager_spawn_egg" },
+    { "item": "minecraft:zombified_piglin_spawn_egg" }
+  ],
+  "outputs": [{ "id": "minecraft:rotten_flesh", "count": 1 }],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}

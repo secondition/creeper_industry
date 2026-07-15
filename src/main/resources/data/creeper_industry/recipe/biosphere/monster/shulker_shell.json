@@ -1,0 +1,7 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "monster",
+  "template": { "item": "minecraft:shulker_spawn_egg" },
+  "outputs": [{ "id": "minecraft:shulker_shell", "count": 1 }],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}

@@ -1,0 +1,11 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "botanical",
+  "template": { "item": "minecraft:mangrove_propagule" },
+  "catalyst": {
+    "ingredient": { "item": "minecraft:bone_meal" },
+    "count": 1
+  },
+  "outputs": [{ "id": "minecraft:mangrove_log", "count": 1 }],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}

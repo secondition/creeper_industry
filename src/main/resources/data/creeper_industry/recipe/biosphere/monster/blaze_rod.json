@@ -1,0 +1,7 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "monster",
+  "template": { "item": "minecraft:blaze_spawn_egg" },
+  "outputs": [{ "id": "minecraft:blaze_rod", "count": 1 }],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}

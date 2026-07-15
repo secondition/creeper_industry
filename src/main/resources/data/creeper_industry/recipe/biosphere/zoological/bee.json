@@ -1,0 +1,11 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "zoological",
+  "template": { "item": "minecraft:bee_spawn_egg" },
+  "catalyst": {
+    "ingredient": { "tag": "minecraft:small_flowers" },
+    "count": 1
+  },
+  "outputs": [{ "id": "minecraft:honeycomb", "count": 1 }],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}

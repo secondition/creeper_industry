@@ -109,7 +109,7 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
         if (level == null || level.isClientSide()) {
             return;
         }
-        SignalRuntimeAccess.get(level).registerReceiver(level, worldPosition);
+        SignalRuntimeAccess.get(level).registerReceiver(worldPosition);
     }
 
     private void unregisterReceiver() {

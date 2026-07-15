@@ -1,0 +1,11 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "zoological",
+  "template": { "item": "minecraft:pig_spawn_egg" },
+  "catalyst": {
+    "ingredient": { "item": "minecraft:carrot" },
+    "count": 1
+  },
+  "outputs": [{ "id": "minecraft:porkchop", "count": 1 }],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}

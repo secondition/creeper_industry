@@ -18,6 +18,7 @@ public class ContinuousSignalUpdateService {
     private final UnifiedSignalRefreshService refreshService;
     private final DeferredSignalRefreshQueue deferredRefreshQueue;
     private final Set<BlockPos> continuouslyDrivenTargets = ConcurrentHashMap.newKeySet();
+    private boolean receiverTargetsDirty;
 
     public ContinuousSignalUpdateService(
             ContinuousSignalSourceRepository repository,
@@ -52,12 +53,9 @@ public class ContinuousSignalUpdateService {
         });
     }
 
-    public void registerReceiver(Level level, BlockPos receiverPos) {
+    public void registerReceiver(BlockPos receiverPos) {
         receiverIndex.register(receiverPos);
-        rebuildContinuouslyDrivenTargets(level);
-        if (continuouslyDrivenTargets.contains(receiverPos)) {
-            deferredRefreshQueue.enqueue(java.util.List.of(receiverPos));
-        }
+        receiverTargetsDirty = true;
     }
 
     public void unregisterReceiver(BlockPos receiverPos) {
@@ -72,6 +70,13 @@ public class ContinuousSignalUpdateService {
         }
         continuouslyDrivenTargets.clear();
         continuouslyDrivenTargets.addAll(rebuiltTargets);
+        receiverTargetsDirty = false;
+    }
+
+    public void rebuildContinuouslyDrivenTargetsIfNeeded(Level level) {
+        if (receiverTargetsDirty) {
+            rebuildContinuouslyDrivenTargets(level);
+        }
     }
 
     public Collection<BlockPos> continuouslyDrivenTargets() {
@@ -99,5 +104,6 @@ public class ContinuousSignalUpdateService {
 
     public void clear() {
         continuouslyDrivenTargets.clear();
+        receiverTargetsDirty = false;
     }
 }

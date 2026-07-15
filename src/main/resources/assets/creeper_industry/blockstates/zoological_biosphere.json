@@ -1,0 +1,9 @@
+{
+  "multipart": [
+    {
+      "apply": {
+        "model": "creeper_industry:block/zoological_biosphere"
+      }
+    }
+  ]
+}

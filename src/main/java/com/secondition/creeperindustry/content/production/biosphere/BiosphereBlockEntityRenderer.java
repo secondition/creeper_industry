@@ -31,11 +31,6 @@ public class BiosphereBlockEntityRenderer implements BlockEntityRenderer<Biosphe
             return;
         }
 
-        BiosphereType biosphereType = biosphere.getBiosphereType();
-        if (biosphereType != BiosphereType.BOTANICAL && biosphereType != BiosphereType.MONSTER) {
-            return;
-        }
-
         ItemStack displayedInput = biosphere.getDisplayedPrimaryInput();
         if (displayedInput.isEmpty()) {
             return;

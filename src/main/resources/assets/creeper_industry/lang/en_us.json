@@ -19,8 +19,12 @@
   "gui.creeper_industry.biosphere.spawn_egg": "Spawn Egg",
   "gui.creeper_industry.biosphere.drop": "Drop",
   "gui.creeper_industry.biosphere.output": "Output",
+  "gui.creeper_industry.biosphere.animal_template": "Animal Template",
+  "gui.creeper_industry.biosphere.feed": "Feed",
+  "gui.creeper_industry.biosphere.animal_product": "Animal Product",
   "gui.creeper_industry.biosphere.signal_hint": "Signal amplitude > 8 produces 1 log",
   "gui.creeper_industry.biosphere.monster_hint": "Positive signal amplitude > 8 produces 1 selected drop",
+  "gui.creeper_industry.biosphere.zoological_hint": "Positive signal amplitude > 8 consumes 1 feed and produces the selected output",
   "gui.creeper_industry.biosphere.selected_output": "Selected Output: %s",
   "gui.creeper_industry.biosphere.no_output": "Selected Output: None",
   "gui.creeper_industry.disc_burner.input": "Item",
@@ -41,6 +45,6 @@
   "tooltip.creeper_industry.storage_disc.amount": "Stored Amount: %s / %s",
   "tooltip.creeper_industry.storage_disc.usage": "Sneak right-click to release all contents and clear the disc",
   "message.creeper_industry.signal_update_detector.reading": "Signal equivalent_value=%s, instantaneous=%s, last_non_zero=%s",
-  "message.creeper_industry.monster_biosphere.selected_drop": "Monster Biosphere selected drop: %s",
-  "message.creeper_industry.monster_biosphere.no_output": "This spawn egg has no eligible drop"
+  "message.creeper_industry.biosphere.selected_output": "Biosphere selected output: %s",
+  "message.creeper_industry.biosphere.no_output": "The current template and catalyst have no available output"
 }

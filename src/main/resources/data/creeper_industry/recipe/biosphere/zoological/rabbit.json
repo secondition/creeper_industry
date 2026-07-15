@@ -1,0 +1,14 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "zoological",
+  "template": { "item": "minecraft:rabbit_spawn_egg" },
+  "catalyst": {
+    "ingredient": { "item": "minecraft:carrot" },
+    "count": 1
+  },
+  "outputs": [
+    { "id": "minecraft:rabbit", "count": 1 },
+    { "id": "minecraft:rabbit_hide", "count": 1 }
+  ],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}

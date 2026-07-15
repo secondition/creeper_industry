@@ -1,0 +1,14 @@
+{
+  "type": "creeper_industry:biosphere_cultivation",
+  "biosphere": "zoological",
+  "template": { "item": "minecraft:cow_spawn_egg" },
+  "catalyst": {
+    "ingredient": { "item": "minecraft:wheat" },
+    "count": 1
+  },
+  "outputs": [
+    { "id": "minecraft:beef", "count": 1 },
+    { "id": "minecraft:leather", "count": 1 }
+  ],
+  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+}
