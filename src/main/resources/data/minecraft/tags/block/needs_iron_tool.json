@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "creeper_industry:botanical_biosphere",
+    "creeper_industry:zoological_biosphere",
+    "creeper_industry:monster_biosphere"
+  ]
+}

@@ -45,9 +45,9 @@ public class CIBlocks {
     public static final Supplier<Block> BOTANICAL_BIOSPHERE = BLOCKS.register("botanical_biosphere",
             () -> new BotanicalBiosphereBlock(botanicalBiosphereProperties()));
     public static final Supplier<Block> ZOOLOGICAL_BIOSPHERE = BLOCKS.register("zoological_biosphere",
-            () -> new ZoologicalBiosphereBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).strength(2.5F).sound(SoundType.GLASS)));
+            () -> new ZoologicalBiosphereBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).strength(2.5F).sound(SoundType.GLASS).requiresCorrectToolForDrops()));
     public static final Supplier<Block> MONSTER_BIOSPHERE = BLOCKS.register("monster_biosphere",
-            () -> new MonsterBiosphereBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).strength(2.5F).sound(SoundType.GLASS)));
+            () -> new MonsterBiosphereBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS).strength(2.5F).sound(SoundType.GLASS).requiresCorrectToolForDrops()));
 
     public static final Supplier<Block> THREE_D_PRINTER = BLOCKS.register("three_d_printer",
             () -> new ThreeDPrinterBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(4.0F).sound(SoundType.METAL)));
@@ -58,6 +58,7 @@ public class CIBlocks {
         return BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)
                 .strength(2.5F)
                 .sound(SoundType.GLASS)
+                .requiresCorrectToolForDrops()
                 .lightLevel(state -> BOTANICAL_BIOSPHERE_GLOW_LEVEL);
     }
 

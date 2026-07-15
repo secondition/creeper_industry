@@ -34,6 +34,7 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public abstract class BiosphereBlock extends SimpleEntityBlock {
@@ -89,19 +90,33 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
         }
 
         net.minecraft.core.Direction facing = state.getValue(FACING);
+        record PlacedPart(BlockPos pos, BlockState previousState) {
+        }
+        List<PlacedPart> placedParts = new ArrayList<>(WIDTH_X * HEIGHT_Y * DEPTH_Z - 1);
         for (int x = 0; x < WIDTH_X; x++) {
             for (int y = 0; y < HEIGHT_Y; y++) {
                 for (int z = 0; z < DEPTH_Z; z++) {
                     if (x == 0 && y == 0 && z == 0) {
                         continue;
                     }
-                    level.setBlock(getPartPos(pos, facing, x, y, z), state
+                    BlockPos partPos = getPartPos(pos, facing, x, y, z);
+                    BlockState previousState = level.getBlockState(partPos);
+                    boolean placed = level.setBlock(partPos, state
                             .setValue(FACING, facing)
                             .setValue(X_PART, x)
                             .setValue(Y_PART, y)
-                            .setValue(Z_PART, z), Block.UPDATE_ALL);
+                            .setValue(Z_PART, z), Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS);
+                    if (placed) {
+                        placedParts.add(new PlacedPart(partPos, previousState));
+                    }
                 }
             }
+        }
+
+        for (PlacedPart placedPart : placedParts) {
+            BlockState partState = level.getBlockState(placedPart.pos());
+            level.sendBlockUpdated(placedPart.pos(), placedPart.previousState(), partState, Block.UPDATE_ALL);
+            level.updateNeighborsAt(placedPart.pos(), partState.getBlock());
         }
     }
 
@@ -186,7 +201,7 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
 
     @Override
     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return getApproximateShape(state);
+        return Shapes.block();
     }
 
     @Override
