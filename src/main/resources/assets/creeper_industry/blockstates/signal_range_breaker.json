@@ -1,0 +1,27 @@
+{
+  "variants": {
+    "facing=down": {
+      "model": "creeper_industry:block/signal_range_breaker",
+      "x": 90
+    },
+    "facing=up": {
+      "model": "creeper_industry:block/signal_range_breaker",
+      "x": 270
+    },
+    "facing=north": {
+      "model": "creeper_industry:block/signal_range_breaker"
+    },
+    "facing=south": {
+      "model": "creeper_industry:block/signal_range_breaker",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "creeper_industry:block/signal_range_breaker",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "creeper_industry:block/signal_range_breaker",
+      "y": 90
+    }
+  }
+}

@@ -25,6 +25,7 @@ public class CIItems {
     public static final Supplier<Item> BLASTPROOF_GLASS = ITEMS.register("blastproof_glass", () -> new BlockItem(CIBlocks.BLASTPROOF_GLASS.get(), new Item.Properties()));
     public static final Supplier<Item> CREATIVE_SIGNAL_SOURCE = ITEMS.register("creative_signal_source", () -> new BlockItem(CIBlocks.CREATIVE_SIGNAL_SOURCE.get(), new Item.Properties()));
     public static final Supplier<Item> SIGNAL_UPDATE_DETECTOR = ITEMS.register("signal_update_detector", () -> new BlockItem(CIBlocks.SIGNAL_UPDATE_DETECTOR.get(), new Item.Properties()));
+    public static final Supplier<Item> SIGNAL_RANGE_BREAKER = ITEMS.register("signal_range_breaker", () -> new BlockItem(CIBlocks.SIGNAL_RANGE_BREAKER.get(), new Item.Properties()));
     public static final Supplier<Item> PRECISION_DROPPER = ITEMS.register("precision_dropper", () -> new BlockItem(CIBlocks.PRECISION_DROPPER.get(), new Item.Properties()));
     public static final Supplier<Item> DISC_BURNER = ITEMS.register("disc_burner", () -> new BlockItem(CIBlocks.DISC_BURNER.get(), new Item.Properties()));
     public static final Supplier<Item> BOTANICAL_BIOSPHERE = ITEMS.register("botanical_biosphere", () -> new BiosphereBlockItem(CIBlocks.BOTANICAL_BIOSPHERE.get(), new Item.Properties()));

@@ -2,6 +2,7 @@ package com.secondition.creeperindustry;
 
 import java.util.function.Supplier;
 
+import com.secondition.creeperindustry.content.automation.breaker.SignalRangeBreakerBlockEntity;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperBlockEntity;
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherBlockEntity;
 import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerBlockEntity;
@@ -24,6 +25,8 @@ public class CIBlockEntityTypes {
             () -> BlockEntityType.Builder.of(CreativeSignalSourceBlockEntity::new, CIBlocks.CREATIVE_SIGNAL_SOURCE.get()).build(null));
     public static final Supplier<BlockEntityType<SignalUpdateDetectorBlockEntity>> SIGNAL_UPDATE_DETECTOR = BLOCK_ENTITY_TYPES.register("signal_update_detector",
             () -> BlockEntityType.Builder.of(SignalUpdateDetectorBlockEntity::new, CIBlocks.SIGNAL_UPDATE_DETECTOR.get()).build(null));
+    public static final Supplier<BlockEntityType<SignalRangeBreakerBlockEntity>> SIGNAL_RANGE_BREAKER = BLOCK_ENTITY_TYPES.register("signal_range_breaker",
+            () -> BlockEntityType.Builder.of(SignalRangeBreakerBlockEntity::new, CIBlocks.SIGNAL_RANGE_BREAKER.get()).build(null));
     public static final Supplier<BlockEntityType<BiosphereBlockEntity>> BIOSPHERE = BLOCK_ENTITY_TYPES.register("biosphere",
             () -> BlockEntityType.Builder.of(BiosphereBlockEntity::new,
                     CIBlocks.BOTANICAL_BIOSPHERE.get(),

@@ -2,6 +2,7 @@ package com.secondition.creeperindustry;
 
 import java.util.function.Supplier;
 
+import com.secondition.creeperindustry.content.automation.breaker.SignalRangeBreakerBlock;
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofDuctBlock;
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofFrameBlock;
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofGlassBlock;
@@ -36,6 +37,8 @@ public class CIBlocks {
             () -> new CreativeSignalSourceBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL)));
     public static final Supplier<Block> SIGNAL_UPDATE_DETECTOR = BLOCKS.register("signal_update_detector",
             () -> new SignalUpdateDetectorBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL)));
+    public static final Supplier<Block> SIGNAL_RANGE_BREAKER = BLOCKS.register("signal_range_breaker",
+            () -> new SignalRangeBreakerBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DISPENSER).strength(4.0F, 8.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
 
     public static final Supplier<Block> PRECISION_DROPPER = BLOCKS.register("precision_dropper",
             () -> new PrecisionDropperBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DISPENSER).strength(3.5F)));

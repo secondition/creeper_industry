@@ -24,6 +24,7 @@ public class CICreativeModeTabs {
                 output.accept(CIBlocks.BLASTPROOF_GLASS.get());
                 output.accept(CIBlocks.CREATIVE_SIGNAL_SOURCE.get());
                 output.accept(CIBlocks.SIGNAL_UPDATE_DETECTOR.get());
+                output.accept(CIBlocks.SIGNAL_RANGE_BREAKER.get());
                 output.accept(CIBlocks.PRECISION_DROPPER.get());
                 output.accept(CIBlocks.DISC_BURNER.get());
                 output.accept(CIBlocks.BOTANICAL_BIOSPHERE.get());

@@ -2,6 +2,7 @@ package com.secondition.creeperindustry;
 
 import java.util.function.Supplier;
 
+import com.secondition.creeperindustry.content.automation.breaker.SignalRangeBreakerMenu;
 import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerMenu;
 import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourceMenu;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperMenu;
@@ -26,6 +27,8 @@ public class CIMenuTypes {
             () -> IMenuTypeExtension.create(DiscBurnerMenu::new));
     public static final Supplier<MenuType<CreativeSignalSourceMenu>> CREATIVE_SIGNAL_SOURCE = MENU_TYPES.register("creative_signal_source",
             () -> IMenuTypeExtension.create(CreativeSignalSourceMenu::new));
+    public static final Supplier<MenuType<SignalRangeBreakerMenu>> SIGNAL_RANGE_BREAKER = MENU_TYPES.register("signal_range_breaker",
+            () -> IMenuTypeExtension.create(SignalRangeBreakerMenu::new));
     public static final Supplier<MenuType<ThreeDPrinterMenu>> THREE_D_PRINTER = MENU_TYPES.register("three_d_printer",
             () -> IMenuTypeExtension.create(ThreeDPrinterMenu::new));
     public static final Supplier<MenuType<RocketLauncherMenu>> ROCKET_LAUNCHER = MENU_TYPES.register("rocket_launcher",
