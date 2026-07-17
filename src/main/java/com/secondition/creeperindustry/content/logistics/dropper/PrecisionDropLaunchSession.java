@@ -4,6 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 
 final class PrecisionDropLaunchSession {
+    private static final double DESCENT_CONFIRMATION_DISTANCE = 0.25D;
+
     enum Phase {
         ASCENDING,
         FALL_PROTECTED
@@ -18,6 +20,7 @@ final class PrecisionDropLaunchSession {
     private Phase phase = Phase.ASCENDING;
     private long fallProtectionStartedGameTime = Long.MIN_VALUE;
     private boolean chunkTicketHeld = true;
+    private double highestObservedY = Double.NEGATIVE_INFINITY;
 
     PrecisionDropLaunchSession(BlockPos dropperPos, int targetX, int targetZ, long startedGameTime) {
         this.dropperPos = dropperPos.immutable();
@@ -71,5 +74,13 @@ final class PrecisionDropLaunchSession {
 
     void markChunkTicketReleased() {
         chunkTicketHeld = false;
+    }
+
+    boolean observeHeightAndCheckDescending(double currentY) {
+        if (currentY > highestObservedY) {
+            highestObservedY = currentY;
+            return false;
+        }
+        return currentY < highestObservedY - DESCENT_CONFIRMATION_DISTANCE;
     }
 }

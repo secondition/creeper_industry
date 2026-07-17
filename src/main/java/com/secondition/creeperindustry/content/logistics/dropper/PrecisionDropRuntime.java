@@ -25,7 +25,7 @@ public final class PrecisionDropRuntime {
     private static final long MAX_ASCENT_TICKS = 400L;
     private static final long MAX_SESSION_TICKS = 1_200L;
     private static final long CHUNK_TICKET_GRACE_TICKS = 40L;
-    private static final float EXPLOSION_POWER = 4.0F;
+    private static final float EXPLOSION_POWER = 1.0F;
     private static final double MIN_HORIZONTAL_SPEED = 1.25D;
     private static final double MAX_HORIZONTAL_SPEED = 8.0D;
     private static final double HORIZONTAL_DISTANCE_SCALE = 32.0D;
@@ -145,7 +145,7 @@ public final class PrecisionDropRuntime {
     }
 
     private void launch(ServerLevel level, ServerPlayer player, PrecisionDropLaunchSession session) {
-        Vec3 explosionCenter = Vec3.atCenterOf(session.dropperPos()).add(0.0D, 0.75D, 0.0D);
+        Vec3 explosionCenter = Vec3.atCenterOf(session.dropperPos());
         level.explode(
                 null,
                 explosionCenter.x,
@@ -206,7 +206,7 @@ public final class PrecisionDropRuntime {
         }
         if (gameTime - session.startedGameTime() > MAX_ASCENT_TICKS
                 || gameTime - session.startedGameTime() > 2L
-                        && (player.verticalCollision || player.getDeltaMovement().y <= 0.0D)) {
+                        && (player.verticalCollision || session.observeHeightAndCheckDescending(player.getY()))) {
             releaseChunkTicket(level, player.getUUID(), session);
             session.beginFallProtection(gameTime);
         }
@@ -285,7 +285,7 @@ public final class PrecisionDropRuntime {
         if (sourcePosition == null) {
             return false;
         }
-        Vec3 launchCenter = Vec3.atCenterOf(session.dropperPos()).add(0.0D, 0.75D, 0.0D);
+        Vec3 launchCenter = Vec3.atCenterOf(session.dropperPos());
         return sourcePosition.distanceToSqr(launchCenter) <= EXPLOSION_PROTECTION_RADIUS_SQUARED;
     }
 
