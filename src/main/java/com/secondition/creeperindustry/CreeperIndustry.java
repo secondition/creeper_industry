@@ -25,6 +25,7 @@ public class CreeperIndustry {
         CIRecipeTypes.register(modEventBus);
         CIRecipeSerializers.register(modEventBus);
         CIAttachmentTypes.register(modEventBus);
+        CIChunkTickets.register(modEventBus);
         CIDataComponents.register(modEventBus);
 
         modEventBus.addListener(CIDatagen::gatherData);

@@ -1,6 +1,7 @@
 package com.secondition.creeperindustry;
 
 import com.secondition.creeperindustry.client.automation.breaker.SignalRangeBreakerScreen;
+import com.secondition.creeperindustry.client.logistics.dropper.PrecisionDropperScreen;
 import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourceScreen;
 import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartEntity;
 import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartRenderer;
@@ -30,6 +31,7 @@ public class CreeperIndustryClient {
         event.register(CIMenuTypes.DISC_BURNER.get(), DiscBurnerScreen::new);
         event.register(CIMenuTypes.CREATIVE_SIGNAL_SOURCE.get(), CreativeSignalSourceScreen::new);
         event.register(CIMenuTypes.SIGNAL_RANGE_BREAKER.get(), SignalRangeBreakerScreen::new);
+        event.register(CIMenuTypes.PRECISION_DROPPER.get(), PrecisionDropperScreen::new);
     }
 
     @SubscribeEvent
