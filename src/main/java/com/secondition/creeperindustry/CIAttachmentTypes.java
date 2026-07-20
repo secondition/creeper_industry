@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import com.mojang.serialization.Codec;
 import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntime;
+import com.secondition.creeperindustry.content.explosion.wave.runtime.WaveRuntime;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -17,6 +18,8 @@ public class CIAttachmentTypes {
             () -> AttachmentType.builder(() -> false).serialize(Codec.BOOL).build());
     public static final Supplier<AttachmentType<SignalRuntime>> SIGNAL_RUNTIME = ATTACHMENT_TYPES.register("signal_runtime",
             () -> AttachmentType.builder(SignalRuntime::new).build());
+    public static final Supplier<AttachmentType<WaveRuntime>> WAVE_RUNTIME = ATTACHMENT_TYPES.register("wave_runtime",
+            () -> AttachmentType.builder(WaveRuntime::new).build());
 
     public static void register(IEventBus modEventBus) {
         ATTACHMENT_TYPES.register(modEventBus);

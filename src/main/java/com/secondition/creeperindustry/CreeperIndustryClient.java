@@ -1,7 +1,8 @@
 package com.secondition.creeperindustry;
 
 import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourceScreen;
-import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartEntity;
+import com.secondition.creeperindustry.content.explosion.wave.client.ClientPulseWavePresentation;
+import com.secondition.creeperindustry.content.explosion.wave.network.PulseWaveSpawnPacket;
 import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartRenderer;
 import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerScreen;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereScreen;
@@ -20,6 +21,7 @@ import net.neoforged.neoforge.common.NeoForge;
 @EventBusSubscriber(modid = CreeperIndustry.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public class CreeperIndustryClient {
     public CreeperIndustryClient() {
+        PulseWaveSpawnPacket.setClientHandler(ClientPulseWavePresentation::spawn);
         NeoForge.EVENT_BUS.addListener(BiosphereHighlightRenderer::onRenderBlockHighlight);
     }
 
