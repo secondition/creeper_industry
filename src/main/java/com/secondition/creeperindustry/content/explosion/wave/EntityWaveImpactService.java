@@ -2,6 +2,7 @@ package com.secondition.creeperindustry.content.explosion.wave;
 
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -22,13 +23,14 @@ public final class EntityWaveImpactService {
         }
 
         Vec3 origin = emission.origin();
+        double queryRadius = Math.max(currentRadius, 0.25);
         AABB queryBox = new AABB(
-                origin.x - currentRadius,
-                origin.y - currentRadius,
-                origin.z - currentRadius,
-                origin.x + currentRadius,
-                origin.y + currentRadius,
-                origin.z + currentRadius
+                origin.x - queryRadius,
+                origin.y - queryRadius,
+                origin.z - queryRadius,
+                origin.x + queryRadius,
+                origin.y + queryRadius,
+                origin.z + queryRadius
         );
 
         for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, queryBox, LivingEntity::isAlive)) {
@@ -52,12 +54,12 @@ public final class EntityWaveImpactService {
                 continue;
             }
 
-            applyImpact(level, entity, origin, samplePoint, effectiveAmplitude);
+            applyImpact(level, entity, emission, origin, samplePoint, effectiveAmplitude);
             wave.markHit(entity.getUUID());
         }
     }
 
-    private void applyImpact(ServerLevel level, LivingEntity entity, Vec3 origin, Vec3 samplePoint, int effectiveAmplitude) {
+    private void applyImpact(ServerLevel level, LivingEntity entity, PulseWaveEmission emission, Vec3 origin, Vec3 samplePoint, int effectiveAmplitude) {
         double impulse = Math.max(0.0, effectiveAmplitude - effectProfile.impulseThreshold()) * effectProfile.impulseScale();
         double damage = Math.max(0.0, effectiveAmplitude - effectProfile.damageThreshold()) * effectProfile.damageScale();
 
@@ -75,7 +77,11 @@ public final class EntityWaveImpactService {
         }
 
         if (damage > 0.0) {
-            DamageSource source = level.damageSources().explosion(null, null);
+            Entity direct = emission.directSource();
+            Entity causing = emission.causingEntity();
+            if (direct != null && direct.isRemoved()) direct = null;
+            if (causing != null && causing.isRemoved()) causing = null;
+            DamageSource source = level.damageSources().explosion(direct, causing);
             entity.hurt(source, (float) damage);
         }
     }

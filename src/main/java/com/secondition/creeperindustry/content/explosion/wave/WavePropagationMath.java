@@ -35,10 +35,11 @@ public final class WavePropagationMath {
     }
 
     public static boolean isShellCrossing(double distance, double previousRadius, double currentRadius) {
-        if (distance <= currentRadius && distance == 0.0 && previousRadius == 0.0) {
-            return true;
-        }
-        return distance > previousRadius && distance <= currentRadius;
+        if (currentRadius < 0) return false;
+        if (distance < 0) return false;
+        if (distance > currentRadius) return false;
+        if (distance > previousRadius) return true;
+        return previousRadius == 0 && distance == 0;
     }
 
     public static double radiusAtAge(double speed, long ageTicks) {

@@ -44,7 +44,9 @@ public final class WaveExplosionEventHandler {
                 explosion.center(),
                 serverLevel.getGameTime(),
                 amplitude,
-                WavePropagationProfile.DEFAULT
+                WavePropagationProfile.DEFAULT,
+                explosion.getDirectSourceEntity(),
+                explosion.getIndirectSourceEntity()
         );
         WaveRuntimeAccess.get(serverLevel).spawnPulse(serverLevel, emission);
     }

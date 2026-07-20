@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
+import com.secondition.creeperindustry.content.explosion.wave.WavePropagationMath;
 import com.secondition.creeperindustry.content.explosion.wave.network.PulseWaveSpawnPacket;
 
 import net.minecraft.client.Minecraft;
@@ -64,21 +65,10 @@ public final class ClientPulseWavePresentation {
             spawnShellParticles(level, wave, currentRadius);
 
             double playerDistance = wave.origin.distanceTo(player.getBoundingBox().getCenter());
-            if (!wave.hitLocalPlayer && playerDistance > previousRadius && playerDistance <= currentRadius) {
-                wave.hitLocalPlayer = true;
-                float strength = strengthAt(wave, playerDistance);
-                level.playLocalSound(
-                        wave.origin.x,
-                        wave.origin.y,
-                        wave.origin.z,
-                        SoundEvents.GENERIC_EXPLODE.value(),
-                        SoundSource.BLOCKS,
-                        4.0F * strength,
-                        (1.0F + (level.random.nextFloat() - level.random.nextFloat()) * 0.2F) * 0.7F,
-                        false
-                );
-                shakeIntensity = Math.max(shakeIntensity, 0.4F * strength);
-                shakeTicks = Math.max(shakeTicks, 8 + Mth.ceil(6.0F * strength));
+            boolean shellHit = WavePropagationMath.isShellCrossing(playerDistance, previousRadius, currentRadius);
+            boolean lateCatchUp = playerDistance <= currentRadius && (currentRadius > 0.0 || playerDistance == 0.0);
+            if (!wave.hitLocalPlayer && (shellHit || lateCatchUp)) {
+                applyLocalPlayerHit(level, wave, playerDistance);
             }
 
             if (currentRadius > wave.maxRadius + wave.speedBlocksPerTick) {
@@ -132,6 +122,23 @@ public final class ClientPulseWavePresentation {
                 level.addParticle(ParticleTypes.SMOKE, x, y, z, 0.0, 0.0, 0.0);
             }
         }
+    }
+
+    private static void applyLocalPlayerHit(Level level, ClientPulseWave wave, double playerDistance) {
+        wave.hitLocalPlayer = true;
+        float strength = strengthAt(wave, playerDistance);
+        level.playLocalSound(
+                wave.origin.x,
+                wave.origin.y,
+                wave.origin.z,
+                SoundEvents.GENERIC_EXPLODE.value(),
+                SoundSource.BLOCKS,
+                4.0F * strength,
+                (1.0F + (level.random.nextFloat() - level.random.nextFloat()) * 0.2F) * 0.7F,
+                false
+        );
+        shakeIntensity = Math.max(shakeIntensity, 0.4F * strength);
+        shakeTicks = Math.max(shakeTicks, 8 + Mth.ceil(6.0F * strength));
     }
 
     private static float strengthAt(ClientPulseWave wave, double distance) {

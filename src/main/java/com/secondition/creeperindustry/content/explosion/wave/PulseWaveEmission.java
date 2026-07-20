@@ -2,7 +2,10 @@ package com.secondition.creeperindustry.content.explosion.wave;
 
 import java.util.UUID;
 
+import javax.annotation.Nullable;
+
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.Vec3;
 
 public record PulseWaveEmission(
@@ -10,7 +13,9 @@ public record PulseWaveEmission(
         Vec3 origin,
         long emissionGameTime,
         int sourceAmplitude,
-        WavePropagationProfile profile
+        WavePropagationProfile profile,
+        @Nullable Entity directSource,
+        @Nullable Entity causingEntity
 ) {
     public PulseWaveEmission {
         if (id == null) {

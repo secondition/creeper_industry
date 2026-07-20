@@ -28,10 +28,14 @@ public final class WaveRuntime implements AutoCloseable {
         Iterator<ActivePulseWave> iterator = activeWaves.iterator();
         while (iterator.hasNext()) {
             ActivePulseWave wave = iterator.next();
-            impactService.applyShell(level, wave, gameTime);
-            wave.lastProcessedGameTime(gameTime);
-            if (wave.isExpired(gameTime)) {
-                iterator.remove();
+            while (wave.lastProcessedGameTime() < gameTime) {
+                long t = wave.lastProcessedGameTime() + 1;
+                impactService.applyShell(level, wave, t);
+                wave.lastProcessedGameTime(t);
+                if (wave.isExpired(t)) {
+                    iterator.remove();
+                    break;
+                }
             }
         }
     }
