@@ -1,6 +1,7 @@
 package com.secondition.creeperindustry;
 
 import com.secondition.creeperindustry.client.automation.breaker.SignalRangeBreakerScreen;
+import com.secondition.creeperindustry.client.explosion.ExplosionVisualClient;
 import com.secondition.creeperindustry.client.logistics.dropper.PrecisionDropperScreen;
 import com.secondition.creeperindustry.client.logistics.launcher.RocketLauncherScreen;
 import com.secondition.creeperindustry.client.logistics.launcher.GuidedFireworkReceiverScreen;
@@ -17,7 +18,9 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 
@@ -26,6 +29,7 @@ import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 public class CreeperIndustryClient {
     public CreeperIndustryClient() {
         NeoForge.EVENT_BUS.addListener(BiosphereHighlightRenderer::onRenderBlockHighlight);
+        ExplosionVisualClient.initialize();
     }
 
     @SubscribeEvent
@@ -44,5 +48,15 @@ public class CreeperIndustryClient {
         event.registerBlockEntityRenderer(CIBlockEntityTypes.BIOSPHERE.get(), BiosphereBlockEntityRenderer::new);
         event.registerEntityRenderer(CIEntityTypes.STORAGE_DISC_MINECART.get(), StorageDiscMinecartRenderer::new);
         event.registerEntityRenderer(CIEntityTypes.GUIDED_FIREWORK_ROCKET.get(), ThrownItemRenderer::new);
+    }
+
+    @SubscribeEvent
+    static void onRegisterShaders(RegisterShadersEvent event) {
+        ExplosionVisualClient.registerShaders(event);
+    }
+
+    @SubscribeEvent
+    static void onRegisterClientReloadListeners(RegisterClientReloadListenersEvent event) {
+        ExplosionVisualClient.registerReloadListeners(event);
     }
 }

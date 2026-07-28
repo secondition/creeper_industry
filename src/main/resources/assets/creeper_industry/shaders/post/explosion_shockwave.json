@@ -1,0 +1,18 @@
+{
+  "targets": [
+    "shockwave_swap"
+  ],
+  "passes": [
+    {
+      "name": "creeper_industry:explosion_refraction",
+      "intarget": "minecraft:main",
+      "outtarget": "shockwave_swap",
+      "use_linear_filter": true
+    },
+    {
+      "name": "minecraft:blit",
+      "intarget": "shockwave_swap",
+      "outtarget": "minecraft:main"
+    }
+  ]
+}
