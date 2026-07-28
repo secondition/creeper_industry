@@ -4,6 +4,8 @@
     "creeper_industry:botanical_biosphere",
     "creeper_industry:zoological_biosphere",
     "creeper_industry:monster_biosphere",
-    "creeper_industry:signal_range_breaker"
+    "creeper_industry:signal_range_breaker",
+    "creeper_industry:rocket_launcher",
+    "creeper_industry:guided_firework_receiver"
   ]
 }

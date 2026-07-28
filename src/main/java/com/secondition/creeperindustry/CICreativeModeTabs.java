@@ -18,6 +18,7 @@ public class CICreativeModeTabs {
                 output.accept(CIItems.CATNIP.get());
                 output.accept(CIItems.GUIDED_FIREWORK_ROCKET.get());
                 output.accept(CIItems.STORAGE_DISC.get());
+                output.accept(CIItems.RECEIVER_ADDRESS.get());
                 output.accept(CIBlocks.BLASTPROOF_DUCT.get());
                 output.accept(CIItems.BLASTPROOF_DUCT_INTERFACE.get());
                 output.accept(CIBlocks.BLASTPROOF_FRAME.get());
@@ -32,6 +33,7 @@ public class CICreativeModeTabs {
                 output.accept(CIBlocks.MONSTER_BIOSPHERE.get());
                 output.accept(CIBlocks.THREE_D_PRINTER.get());
                 output.accept(CIBlocks.ROCKET_LAUNCHER.get());
+                output.accept(CIBlocks.GUIDED_FIREWORK_RECEIVER.get());
             })
             .build());
 

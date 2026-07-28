@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import com.mojang.serialization.Codec;
 import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntime;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropRuntime;
+import com.secondition.creeperindustry.content.logistics.rocket.runtime.RocketFlightRuntime;
 
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.attachment.AttachmentType;
@@ -20,6 +21,8 @@ public class CIAttachmentTypes {
             () -> AttachmentType.builder(SignalRuntime::new).build());
     public static final Supplier<AttachmentType<PrecisionDropRuntime>> PRECISION_DROP_RUNTIME = ATTACHMENT_TYPES.register("precision_drop_runtime",
             () -> AttachmentType.builder(PrecisionDropRuntime::new).build());
+    public static final Supplier<AttachmentType<RocketFlightRuntime>> ROCKET_FLIGHT_RUNTIME = ATTACHMENT_TYPES.register("rocket_flight_runtime",
+            () -> AttachmentType.builder(RocketFlightRuntime::new).build());
 
     public static void register(IEventBus modEventBus) {
         ATTACHMENT_TYPES.register(modEventBus);

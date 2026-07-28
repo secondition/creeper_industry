@@ -4,6 +4,7 @@ import java.util.function.Supplier;
 
 import com.secondition.creeperindustry.content.energy.transmission.BlastproofDuctInterfaceItem;
 import com.secondition.creeperindustry.content.logistics.rocket.GuidedFireworkRocketItem;
+import com.secondition.creeperindustry.content.logistics.rocket.ReceiverAddressItem;
 import com.secondition.creeperindustry.content.logistics.storage.StorageDiscItem;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereBlockItem;
 
@@ -18,6 +19,7 @@ public class CIItems {
     public static final Supplier<Item> CATNIP = ITEMS.register("catnip", () -> new Item(new Item.Properties()));
     public static final Supplier<Item> GUIDED_FIREWORK_ROCKET = ITEMS.register("guided_firework_rocket", GuidedFireworkRocketItem::new);
     public static final Supplier<Item> STORAGE_DISC = ITEMS.register("storage_disc", () -> new StorageDiscItem(new Item.Properties()));
+    public static final Supplier<Item> RECEIVER_ADDRESS = ITEMS.register("receiver_address", () -> new ReceiverAddressItem(new Item.Properties().stacksTo(64)));
 
     public static final Supplier<Item> BLASTPROOF_DUCT = ITEMS.register("blastproof_duct", () -> new BlockItem(CIBlocks.BLASTPROOF_DUCT.get(), new Item.Properties()));
     public static final Supplier<Item> BLASTPROOF_DUCT_INTERFACE = ITEMS.register("blastproof_duct_interface", () -> new BlastproofDuctInterfaceItem(new Item.Properties()));
@@ -33,6 +35,7 @@ public class CIItems {
     public static final Supplier<Item> MONSTER_BIOSPHERE = ITEMS.register("monster_biosphere", () -> new BiosphereBlockItem(CIBlocks.MONSTER_BIOSPHERE.get(), new Item.Properties()));
     public static final Supplier<Item> THREE_D_PRINTER = ITEMS.register("three_d_printer", () -> new BlockItem(CIBlocks.THREE_D_PRINTER.get(), new Item.Properties()));
     public static final Supplier<Item> ROCKET_LAUNCHER = ITEMS.register("rocket_launcher", () -> new BlockItem(CIBlocks.ROCKET_LAUNCHER.get(), new Item.Properties()));
+    public static final Supplier<Item> GUIDED_FIREWORK_RECEIVER = ITEMS.register("guided_firework_receiver", () -> new BlockItem(CIBlocks.GUIDED_FIREWORK_RECEIVER.get(), new Item.Properties()));
 
     public static void register(IEventBus modEventBus) {
         ITEMS.register(modEventBus);

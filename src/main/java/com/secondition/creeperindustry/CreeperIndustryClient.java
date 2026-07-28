@@ -2,6 +2,8 @@ package com.secondition.creeperindustry;
 
 import com.secondition.creeperindustry.client.automation.breaker.SignalRangeBreakerScreen;
 import com.secondition.creeperindustry.client.logistics.dropper.PrecisionDropperScreen;
+import com.secondition.creeperindustry.client.logistics.launcher.RocketLauncherScreen;
+import com.secondition.creeperindustry.client.logistics.launcher.GuidedFireworkReceiverScreen;
 import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourceScreen;
 import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartEntity;
 import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartRenderer;
@@ -17,6 +19,7 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 
 @Mod(value = CreeperIndustry.MODID, dist = Dist.CLIENT)
 @EventBusSubscriber(modid = CreeperIndustry.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
@@ -32,11 +35,14 @@ public class CreeperIndustryClient {
         event.register(CIMenuTypes.CREATIVE_SIGNAL_SOURCE.get(), CreativeSignalSourceScreen::new);
         event.register(CIMenuTypes.SIGNAL_RANGE_BREAKER.get(), SignalRangeBreakerScreen::new);
         event.register(CIMenuTypes.PRECISION_DROPPER.get(), PrecisionDropperScreen::new);
+        event.register(CIMenuTypes.ROCKET_LAUNCHER.get(), RocketLauncherScreen::new);
+        event.register(CIMenuTypes.GUIDED_FIREWORK_RECEIVER.get(), GuidedFireworkReceiverScreen::new);
     }
 
     @SubscribeEvent
     static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(CIBlockEntityTypes.BIOSPHERE.get(), BiosphereBlockEntityRenderer::new);
         event.registerEntityRenderer(CIEntityTypes.STORAGE_DISC_MINECART.get(), StorageDiscMinecartRenderer::new);
+        event.registerEntityRenderer(CIEntityTypes.GUIDED_FIREWORK_ROCKET.get(), ThrownItemRenderer::new);
     }
 }

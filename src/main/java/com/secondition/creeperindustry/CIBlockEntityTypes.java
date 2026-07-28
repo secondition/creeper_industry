@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import com.secondition.creeperindustry.content.automation.breaker.SignalRangeBreakerBlockEntity;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperBlockEntity;
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherBlockEntity;
+import com.secondition.creeperindustry.content.logistics.launcher.GuidedFireworkReceiverBlockEntity;
 import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerBlockEntity;
 import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourceBlockEntity;
 import com.secondition.creeperindustry.content.energy.signal.SignalUpdateDetectorBlockEntity;
@@ -38,6 +39,8 @@ public class CIBlockEntityTypes {
             () -> BlockEntityType.Builder.of(ThreeDPrinterBlockEntity::new, CIBlocks.THREE_D_PRINTER.get()).build(null));
     public static final Supplier<BlockEntityType<RocketLauncherBlockEntity>> ROCKET_LAUNCHER = BLOCK_ENTITY_TYPES.register("rocket_launcher",
             () -> BlockEntityType.Builder.of(RocketLauncherBlockEntity::new, CIBlocks.ROCKET_LAUNCHER.get()).build(null));
+    public static final Supplier<BlockEntityType<GuidedFireworkReceiverBlockEntity>> GUIDED_FIREWORK_RECEIVER = BLOCK_ENTITY_TYPES.register("guided_firework_receiver",
+            () -> BlockEntityType.Builder.of(GuidedFireworkReceiverBlockEntity::new, CIBlocks.GUIDED_FIREWORK_RECEIVER.get()).build(null));
 
     public static void register(IEventBus modEventBus) {
         BLOCK_ENTITY_TYPES.register(modEventBus);

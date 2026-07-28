@@ -10,6 +10,7 @@ import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourc
 import com.secondition.creeperindustry.content.energy.signal.SignalUpdateDetectorBlock;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperBlock;
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherBlock;
+import com.secondition.creeperindustry.content.logistics.launcher.GuidedFireworkReceiverBlock;
 import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerBlock;
 import com.secondition.creeperindustry.content.production.biosphere.BotanicalBiosphereBlock;
 import com.secondition.creeperindustry.content.production.biosphere.MonsterBiosphereBlock;
@@ -56,6 +57,8 @@ public class CIBlocks {
             () -> new ThreeDPrinterBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(4.0F).sound(SoundType.METAL)));
     public static final Supplier<Block> ROCKET_LAUNCHER = BLOCKS.register("rocket_launcher",
             () -> new RocketLauncherBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.DISPENSER).strength(4.0F).sound(SoundType.METAL)));
+    public static final Supplier<Block> GUIDED_FIREWORK_RECEIVER = BLOCKS.register("guided_firework_receiver",
+            () -> new GuidedFireworkReceiverBlock(BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK).strength(4.0F).sound(SoundType.METAL)));
 
     private static BlockBehaviour.Properties botanicalBiosphereProperties() {
         return BlockBehaviour.Properties.ofFullCopy(Blocks.GLASS)

@@ -7,6 +7,7 @@ import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerMenu;
 import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourceMenu;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperMenu;
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherMenu;
+import com.secondition.creeperindustry.content.logistics.launcher.GuidedFireworkReceiverMenu;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereMenu;
 import com.secondition.creeperindustry.content.production.printer.ThreeDPrinterMenu;
 
@@ -33,6 +34,8 @@ public class CIMenuTypes {
             () -> IMenuTypeExtension.create(ThreeDPrinterMenu::new));
     public static final Supplier<MenuType<RocketLauncherMenu>> ROCKET_LAUNCHER = MENU_TYPES.register("rocket_launcher",
             () -> IMenuTypeExtension.create(RocketLauncherMenu::new));
+    public static final Supplier<MenuType<GuidedFireworkReceiverMenu>> GUIDED_FIREWORK_RECEIVER = MENU_TYPES.register("guided_firework_receiver",
+            () -> IMenuTypeExtension.create(GuidedFireworkReceiverMenu::new));
 
     public static void register(IEventBus modEventBus) {
         MENU_TYPES.register(modEventBus);

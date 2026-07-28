@@ -1,6 +1,5 @@
 package com.secondition.creeperindustry;
 
-import com.secondition.creeperindustry.content.logistics.rocket.RocketTargetingPacket;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropLaunchPayload;
 import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDropperPayload;
 
@@ -14,8 +13,6 @@ public class CIPackets {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         PayloadRegistrar registrar = event.registrar(NETWORK_VERSION);
-        registrar.playToServer(RocketTargetingPacket.TYPE, RocketTargetingPacket.STREAM_CODEC, (payload, context) -> {
-        });
         registrar.playToServer(
                 PrecisionDropperPayload.TYPE,
                 PrecisionDropperPayload.STREAM_CODEC,

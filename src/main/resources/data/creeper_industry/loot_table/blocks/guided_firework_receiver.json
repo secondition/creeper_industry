@@ -1,0 +1,1 @@
+{"type":"minecraft:block","pools":[{"rolls":1,"entries":[{"type":"minecraft:item","name":"creeper_industry:guided_firework_receiver"}],"conditions":[{"condition":"minecraft:survives_explosion"}]}]}
