@@ -1,5 +1,6 @@
 package com.secondition.creeperindustry.content.explosion.wave;
 
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class WavePropagationMath {
@@ -17,13 +18,8 @@ public final class WavePropagationMath {
         return a.distanceTo(b);
     }
 
-    public static int attenuationCost(double distance, double attenuationPerBlock) {
-        return (int) Math.ceil(distance * attenuationPerBlock);
-    }
-
-    public static int effectiveAmplitude(int sourceAmplitude, double distance, double attenuationPerBlock) {
-        int cost = attenuationCost(distance, attenuationPerBlock);
-        return Math.max(0, sourceAmplitude - cost);
+    public static double effectiveAmplitude(double sourceAmplitude, double distance, double attenuationPerBlock) {
+        return Math.max(0.0, sourceAmplitude - distance * attenuationPerBlock);
     }
 
     public static long travelTicks(double distance, double speedBlocksPerTick) {
@@ -34,22 +30,38 @@ public final class WavePropagationMath {
         return emissionTick + travelTicks(distance, speed);
     }
 
-    public static boolean isShellCrossing(double distance, double previousRadius, double currentRadius) {
-        if (currentRadius < 0) return false;
-        if (distance < 0) return false;
-        if (distance > currentRadius) return false;
-        if (distance > previousRadius) return true;
-        return previousRadius == 0 && distance == 0;
-    }
-
     public static double radiusAtAge(double speed, long ageTicks) {
         return speed * Math.max(0, ageTicks);
     }
 
-    public static double maxEffectiveRadius(int sourceAmplitude, double attenuationPerBlock) {
-        if (attenuationPerBlock == 0) {
-            return Double.POSITIVE_INFINITY;
-        }
+    public static double maxEffectiveRadius(double sourceAmplitude, double attenuationPerBlock) {
         return sourceAmplitude / attenuationPerBlock;
+    }
+
+    public static double closestDistanceToAABB(Vec3 point, AABB aabb) {
+        double dx = 0.0, dy = 0.0, dz = 0.0;
+        if (point.x < aabb.minX) {
+            dx = aabb.minX - point.x;
+        } else if (point.x > aabb.maxX) {
+            dx = point.x - aabb.maxX;
+        }
+        if (point.y < aabb.minY) {
+            dy = aabb.minY - point.y;
+        } else if (point.y > aabb.maxY) {
+            dy = point.y - aabb.maxY;
+        }
+        if (point.z < aabb.minZ) {
+            dz = aabb.minZ - point.z;
+        } else if (point.z > aabb.maxZ) {
+            dz = point.z - aabb.maxZ;
+        }
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    }
+
+    public static double farthestDistanceToAABB(Vec3 point, AABB aabb) {
+        double dx = Math.max(Math.abs(point.x - aabb.minX), Math.abs(point.x - aabb.maxX));
+        double dy = Math.max(Math.abs(point.y - aabb.minY), Math.abs(point.y - aabb.maxY));
+        double dz = Math.max(Math.abs(point.z - aabb.minZ), Math.abs(point.z - aabb.maxZ));
+        return Math.sqrt(dx * dx + dy * dy + dz * dz);
     }
 }

@@ -48,7 +48,7 @@ public class ActivePulseWave {
     }
 
     public boolean isExpired(long gameTime) {
-        return currentRadius(gameTime) > emission.maxEffectiveRadius();
+        return currentRadius(gameTime) >= emission.maxEffectiveRadius();
     }
 
     public void markHit(UUID entityId) {

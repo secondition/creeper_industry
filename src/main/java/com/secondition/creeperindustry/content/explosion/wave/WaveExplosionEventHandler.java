@@ -32,7 +32,7 @@ public final class WaveExplosionEventHandler {
             return;
         }
 
-        int amplitude = PulseWaveEmission.amplitudeFromExplosionPower(explosion.radius());
+        double amplitude = PulseWaveEmission.amplitudeFromExplosionPower(explosion.radius());
         if (amplitude <= 0) {
             return;
         }
@@ -46,7 +46,8 @@ public final class WaveExplosionEventHandler {
                 amplitude,
                 WavePropagationProfile.DEFAULT,
                 explosion.getDirectSourceEntity(),
-                explosion.getIndirectSourceEntity()
+                explosion.getIndirectSourceEntity(),
+                explosion
         );
         WaveRuntimeAccess.get(serverLevel).spawnPulse(serverLevel, emission);
     }

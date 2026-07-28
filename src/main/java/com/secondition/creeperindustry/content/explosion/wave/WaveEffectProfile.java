@@ -9,17 +9,17 @@ public record WaveEffectProfile(
     public static final WaveEffectProfile DEFAULT = new WaveEffectProfile(0.0, 0.08, 2.0, 0.5);
 
     public WaveEffectProfile {
-        if (impulseThreshold < 0) {
-            throw new IllegalArgumentException("Impulse threshold cannot be negative");
+        if (impulseThreshold < 0 || !Double.isFinite(impulseThreshold)) {
+            throw new IllegalArgumentException("Impulse threshold must be non-negative and finite");
         }
-        if (Double.isNaN(impulseScale)) {
-            throw new IllegalArgumentException("Impulse scale must be a number");
+        if (impulseScale < 0 || !Double.isFinite(impulseScale)) {
+            throw new IllegalArgumentException("Impulse scale must be non-negative and finite");
         }
-        if (damageThreshold < 0) {
-            throw new IllegalArgumentException("Damage threshold cannot be negative");
+        if (damageThreshold < 0 || !Double.isFinite(damageThreshold)) {
+            throw new IllegalArgumentException("Damage threshold must be non-negative and finite");
         }
-        if (Double.isNaN(damageScale)) {
-            throw new IllegalArgumentException("Damage scale must be a number");
+        if (damageScale < 0 || !Double.isFinite(damageScale)) {
+            throw new IllegalArgumentException("Damage scale must be non-negative and finite");
         }
     }
 }

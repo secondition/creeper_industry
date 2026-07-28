@@ -4,18 +4,19 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
-import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Explosion;
 import net.minecraft.world.phys.Vec3;
 
 public record PulseWaveEmission(
         UUID id,
         Vec3 origin,
         long emissionGameTime,
-        int sourceAmplitude,
+        double sourceAmplitude,
         WavePropagationProfile profile,
         @Nullable Entity directSource,
-        @Nullable Entity causingEntity
+        @Nullable Entity causingEntity,
+        Explosion originalExplosion
 ) {
     public PulseWaveEmission {
         if (id == null) {
@@ -24,11 +25,14 @@ public record PulseWaveEmission(
         if (origin == null) {
             throw new IllegalArgumentException("Origin cannot be null");
         }
-        if (sourceAmplitude <= 0) {
-            throw new IllegalArgumentException("Source amplitude must be positive");
+        if (sourceAmplitude <= 0 || !Double.isFinite(sourceAmplitude)) {
+            throw new IllegalArgumentException("Source amplitude must be positive and finite");
         }
         if (profile == null) {
             throw new IllegalArgumentException("Propagation profile cannot be null");
+        }
+        if (originalExplosion == null) {
+            throw new IllegalArgumentException("Original explosion cannot be null");
         }
     }
 
@@ -36,7 +40,7 @@ public record PulseWaveEmission(
         return WavePropagationMath.maxEffectiveRadius(sourceAmplitude, profile.attenuationPerBlock());
     }
 
-    public static int amplitudeFromExplosionPower(float explosionPower) {
-        return Mth.ceil(explosionPower * 4.0F);
+    public static double amplitudeFromExplosionPower(float explosionPower) {
+        return Math.ceil(explosionPower * 4.0F);
     }
 }

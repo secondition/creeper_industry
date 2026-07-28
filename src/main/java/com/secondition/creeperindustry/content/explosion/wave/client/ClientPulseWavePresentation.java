@@ -15,6 +15,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -40,7 +41,8 @@ public final class ClientPulseWavePresentation {
                 packet.emissionGameTime(),
                 packet.speedBlocksPerTick(),
                 packet.maxRadius(),
-                packet.amplitude()
+                packet.amplitude(),
+                packet.attenuationPerBlock()
         ));
     }
 
@@ -64,14 +66,21 @@ public final class ClientPulseWavePresentation {
             double currentRadius = wave.radiusAt(gameTime);
             spawnShellParticles(level, wave, currentRadius);
 
-            double playerDistance = wave.origin.distanceTo(player.getBoundingBox().getCenter());
-            boolean shellHit = WavePropagationMath.isShellCrossing(playerDistance, previousRadius, currentRadius);
-            boolean lateCatchUp = playerDistance <= currentRadius && (currentRadius > 0.0 || playerDistance == 0.0);
-            if (!wave.hitLocalPlayer && (shellHit || lateCatchUp)) {
-                applyLocalPlayerHit(level, wave, playerDistance);
+            AABB playerBox = player.getBoundingBox();
+            double closestDist = WavePropagationMath.closestDistanceToAABB(wave.origin, playerBox);
+            double farthestDist = WavePropagationMath.farthestDistanceToAABB(wave.origin, playerBox);
+
+            boolean shellHit = currentRadius >= closestDist && previousRadius <= farthestDist;
+            double effectiveAmplitude = WavePropagationMath.effectiveAmplitude(
+                    wave.amplitude,
+                    closestDist,
+                    wave.attenuationPerBlock
+            );
+            if (!wave.hitLocalPlayer && shellHit && effectiveAmplitude > 0.0) {
+                applyLocalPlayerHit(level, wave, closestDist);
             }
 
-            if (currentRadius > wave.maxRadius + wave.speedBlocksPerTick) {
+            if (currentRadius >= wave.maxRadius) {
                 iterator.remove();
             }
         }
@@ -124,9 +133,9 @@ public final class ClientPulseWavePresentation {
         }
     }
 
-    private static void applyLocalPlayerHit(Level level, ClientPulseWave wave, double playerDistance) {
+    private static void applyLocalPlayerHit(Level level, ClientPulseWave wave, double closestDist) {
         wave.hitLocalPlayer = true;
-        float strength = strengthAt(wave, playerDistance);
+        float strength = strengthAt(wave, closestDist);
         level.playLocalSound(
                 wave.origin.x,
                 wave.origin.y,
@@ -142,8 +151,8 @@ public final class ClientPulseWavePresentation {
     }
 
     private static float strengthAt(ClientPulseWave wave, double distance) {
-        double remaining = Math.max(0.0, wave.amplitude - distance);
-        return (float) Mth.clamp(remaining / Math.max(1, wave.amplitude), 0.05, 1.0);
+        double remaining = Math.max(0.0, wave.amplitude - wave.attenuationPerBlock * distance);
+        return (float) Mth.clamp(remaining / Math.max(1.0, wave.amplitude), 0.05F, 1.0F);
     }
 
     private static final class ClientPulseWave {
@@ -152,7 +161,8 @@ public final class ClientPulseWavePresentation {
         private final long emissionGameTime;
         private final double speedBlocksPerTick;
         private final double maxRadius;
-        private final int amplitude;
+        private final double amplitude;
+        private final double attenuationPerBlock;
         private boolean hitLocalPlayer;
 
         private ClientPulseWave(
@@ -161,7 +171,8 @@ public final class ClientPulseWavePresentation {
                 long emissionGameTime,
                 double speedBlocksPerTick,
                 double maxRadius,
-                int amplitude
+                double amplitude,
+                double attenuationPerBlock
         ) {
             this.id = id;
             this.origin = origin;
@@ -169,6 +180,7 @@ public final class ClientPulseWavePresentation {
             this.speedBlocksPerTick = speedBlocksPerTick;
             this.maxRadius = maxRadius;
             this.amplitude = amplitude;
+            this.attenuationPerBlock = attenuationPerBlock;
         }
 
         private double radiusAt(long gameTime) {

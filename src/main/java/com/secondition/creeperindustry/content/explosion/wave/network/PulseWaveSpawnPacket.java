@@ -20,7 +20,8 @@ public record PulseWaveSpawnPacket(
         long emissionGameTime,
         double speedBlocksPerTick,
         double maxRadius,
-        int amplitude
+        double amplitude,
+        double attenuationPerBlock
 ) implements CustomPacketPayload {
     public static final Type<PulseWaveSpawnPacket> TYPE = new Type<>(CreeperIndustry.asResource("pulse_wave_spawn"));
 
@@ -33,7 +34,8 @@ public record PulseWaveSpawnPacket(
                 buf.writeVarLong(packet.emissionGameTime());
                 buf.writeDouble(packet.speedBlocksPerTick());
                 buf.writeDouble(packet.maxRadius());
-                buf.writeVarInt(packet.amplitude());
+                buf.writeDouble(packet.amplitude());
+                buf.writeDouble(packet.attenuationPerBlock());
             },
             buf -> new PulseWaveSpawnPacket(
                     buf.readUUID(),
@@ -43,7 +45,8 @@ public record PulseWaveSpawnPacket(
                     buf.readVarLong(),
                     buf.readDouble(),
                     buf.readDouble(),
-                    buf.readVarInt()
+                    buf.readDouble(),
+                    buf.readDouble()
             )
     );
 
@@ -65,7 +68,8 @@ public record PulseWaveSpawnPacket(
                 emission.emissionGameTime(),
                 emission.profile().propagationSpeedBlocksPerTick(),
                 emission.maxEffectiveRadius(),
-                emission.sourceAmplitude()
+                emission.sourceAmplitude(),
+                emission.profile().attenuationPerBlock()
         );
     }
 
