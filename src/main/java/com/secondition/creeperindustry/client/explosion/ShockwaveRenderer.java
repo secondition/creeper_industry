@@ -38,7 +38,7 @@ final class ShockwaveRenderer {
                     ))
                     .setTransparencyState(RenderStateShard.TRANSLUCENT_TRANSPARENCY)
                     .setDepthTestState(RenderStateShard.LEQUAL_DEPTH_TEST)
-                    .setCullState(RenderStateShard.NO_CULL)
+                    .setCullState(RenderStateShard.CULL)
                     .setWriteMaskState(RenderStateShard.COLOR_WRITE)
                     .createCompositeState(false)
     );
@@ -121,7 +121,7 @@ final class ShockwaveRenderer {
     ) {
         float distanceFade = 1.0F - normalizedRadius;
         distanceFade *= distanceFade;
-        float baseAlpha = (0.025F + 0.12F * distanceFade) * shockwave.visibility();
+        float baseAlpha = (0.04F + 0.20F * distanceFade) * shockwave.visibility();
         float warmAmount = Mth.clamp(1.0F - age / 5.0F, 0.0F, 1.0F);
         float red = Mth.lerp(warmAmount, 0.70F, 1.0F);
         float green = Mth.lerp(warmAmount, 0.88F, 0.72F);

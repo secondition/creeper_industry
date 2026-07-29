@@ -28,6 +28,12 @@
       "values": [1.0, 1.0]
     },
     {
+      "name": "OutSize",
+      "type": "float",
+      "count": 2,
+      "values": [1.0, 1.0]
+    },
+    {
       "name": "ShockwaveCenterX",
       "type": "float",
       "count": 1,

@@ -9,7 +9,6 @@ import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterShadersEvent;
-import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -26,7 +25,6 @@ public final class ExplosionVisualClient {
         ExplosionShockwaveClientBridge.register(MANAGER::receive);
         NeoForge.EVENT_BUS.addListener(ExplosionVisualClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(ExplosionVisualClient::onRenderLevelStage);
-        NeoForge.EVENT_BUS.addListener(ExplosionVisualClient::onRenderGui);
         NeoForge.EVENT_BUS.addListener(ExplosionVisualClient::onCameraAngles);
         NeoForge.EVENT_BUS.addListener(ExplosionVisualClient::onLogout);
     }
@@ -60,11 +58,8 @@ public final class ExplosionVisualClient {
                             impact -> POST_PROCESSOR.prepare(event, impact),
                             POST_PROCESSOR::clearPending
                     );
+            POST_PROCESSOR.processPending();
         }
-    }
-
-    private static void onRenderGui(RenderGuiEvent.Pre event) {
-        POST_PROCESSOR.processPending();
     }
 
     private static void onCameraAngles(ViewportEvent.ComputeCameraAngles event) {
@@ -82,9 +77,9 @@ public final class ExplosionVisualClient {
             }
             float time = minecraft.level.getGameTime() + partialTick;
             float oscillation = time * 2.6F + impact.phase() * (float) (Math.PI * 2.0);
-            event.setYaw(event.getYaw() + Mth.sin(oscillation) * strength * 0.45F);
-            event.setPitch(event.getPitch() + Mth.cos(oscillation * 1.13F) * strength * 0.65F);
-            event.setRoll(event.getRoll() + Mth.sin(oscillation * 0.79F) * strength * 0.35F);
+            event.setYaw(event.getYaw() + Mth.sin(oscillation) * strength * 0.65F);
+            event.setPitch(event.getPitch() + Mth.cos(oscillation * 1.13F) * strength * 0.90F);
+            event.setRoll(event.getRoll() + Mth.sin(oscillation * 0.79F) * strength * 0.50F);
         });
     }
 

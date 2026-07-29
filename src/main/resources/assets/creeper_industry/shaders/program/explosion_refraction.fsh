@@ -24,13 +24,16 @@ void main() {
     ripple += 0.45 * sin(radialDistance * 131.0 + ShockwavePhase * 9.424778);
     float edgeFade = smoothstep(0.015, 0.12, radialDistance)
         * (1.0 - smoothstep(0.85, 1.45, radialDistance));
-    float displacement = ShockwaveStrength * edgeFade * (0.0045 + ripple * 0.0022);
+    float displacement = ShockwaveStrength * edgeFade * (0.0070 + ripple * 0.0035);
     vec2 uvOffset = radialDirection * displacement;
     uvOffset.x /= aspect;
 
     vec2 refractedUv = clamp(texCoord + uvOffset, vec2(0.001), vec2(0.999));
     vec4 scene = texture(DiffuseSampler, refractedUv);
     float flashShape = 1.0 - smoothstep(0.0, 1.2, radialDistance);
-    vec3 flashColor = vec3(1.0, 0.66, 0.34) * ShockwaveStrength * flashShape * 0.11;
-    fragColor = vec4(min(scene.rgb + flashColor, vec3(1.0)), scene.a);
+    vec3 flashColor = vec3(1.0, 0.66, 0.34) * ShockwaveStrength * flashShape * 0.16;
+    // The following minecraft:blit pass uses source-alpha blending after its
+    // output target has been cleared. The scene target's alpha is not a stable
+    // opacity value, so forwarding it can make the cleared frame stay blank.
+    fragColor = vec4(min(scene.rgb + flashColor, vec3(1.0)), 1.0);
 }
