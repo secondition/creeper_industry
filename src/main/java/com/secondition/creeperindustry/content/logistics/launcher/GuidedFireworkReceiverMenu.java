@@ -33,7 +33,7 @@ public class GuidedFireworkReceiverMenu extends AbstractContainerMenu {
     private final Container container;
     private final ContainerData data;
     private final ContainerLevelAccess access;
-    private int lastAddressPrintTick = Integer.MIN_VALUE;
+    private int lastAddressPrintTick = -1;
 
     public GuidedFireworkReceiverMenu(int containerId, Inventory inventory, RegistryFriendlyByteBuf extraData) {
         this(containerId, inventory, createClientContext(inventory, extraData));
@@ -100,7 +100,7 @@ public class GuidedFireworkReceiverMenu extends AbstractContainerMenu {
         }
         if (id == BUTTON_PRINT_ADDRESS) {
             int now = player.tickCount;
-            if (now - lastAddressPrintTick < 5) {
+            if (lastAddressPrintTick >= 0 && now - lastAddressPrintTick < 5) {
                 return false;
             }
             ItemStack address = receiver.createAddress();
