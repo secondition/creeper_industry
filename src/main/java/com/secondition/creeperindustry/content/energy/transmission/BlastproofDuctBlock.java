@@ -25,7 +25,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-import java.util.LinkedHashSet;
+import java.util.Arrays;
 
 public class BlastproofDuctBlock extends Block {
     public static final MapCodec<BlastproofDuctBlock> CODEC = simpleCodec(BlastproofDuctBlock::new);
@@ -76,39 +76,19 @@ public class BlastproofDuctBlock extends Block {
     @Override
     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (!level.isClientSide() && !oldState.is(state.getBlock())) {
-            SignalRuntime runtime = SignalRuntimeAccess.get(level);
-            refreshAffectedReceivers(level, runtime.ductNetworkManager().getAffectedReceiversAfterPlacement(
-                    level,
-                    pos,
-                    runtime.receiverIndex(),
-                    runtime.continuousSourceRepository()
-            ));
+        if (!level.isClientSide() && (!oldState.is(state.getBlock())
+                || Arrays.stream(Direction.values()).anyMatch(direction ->
+                        DuctTransmissionHelper.hasInterface(state, direction)
+                                != DuctTransmissionHelper.hasInterface(oldState, direction)))) {
+            refreshAffectedReceivers(level, pos, oldState);
         }
     }
 
     @Override
     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        LinkedHashSet<BlockPos> affectedReceivers = new LinkedHashSet<>();
-        if (!level.isClientSide() && !state.is(newState.getBlock())) {
-            SignalRuntime runtime = SignalRuntimeAccess.get(level);
-            affectedReceivers.addAll(runtime.ductNetworkManager().getAffectedReceiversBeforeRemoval(
-                    level,
-                    pos,
-                    runtime.receiverIndex(),
-                    runtime.continuousSourceRepository()
-            ));
-        }
         super.onRemove(state, level, pos, newState, movedByPiston);
         if (!level.isClientSide() && !state.is(newState.getBlock())) {
-            SignalRuntime runtime = SignalRuntimeAccess.get(level);
-            affectedReceivers.addAll(runtime.ductNetworkManager().getAffectedReceiversAfterRemoval(
-                    level,
-                    pos,
-                    runtime.receiverIndex(),
-                    runtime.continuousSourceRepository()
-            ));
-            refreshAffectedReceivers(level, affectedReceivers);
+            refreshAffectedReceivers(level, pos, state);
         }
     }
 
@@ -177,20 +157,13 @@ public class BlastproofDuctBlock extends Block {
                 pos.getY() + 0.5D + face.getStepY() * 0.35D,
                 pos.getZ() + 0.5D + face.getStepZ() * 0.35D,
                 new ItemStack(com.secondition.creeperindustry.CIItems.BLASTPROOF_DUCT_INTERFACE.get())));
-        SignalRuntime runtime = SignalRuntimeAccess.get(level);
-        refreshAffectedReceivers(level, runtime.ductNetworkManager().getAffectedReceiversForInterfaceChange(
-                level,
-                pos,
-                runtime.receiverIndex(),
-                runtime.continuousSourceRepository()
-        ));
         return InteractionResult.CONSUME;
     }
 
-    private void refreshAffectedReceivers(Level level, java.util.Collection<BlockPos> receiverPositions) {
-        if (!receiverPositions.isEmpty()) {
-            SignalRuntimeAccess.get(level).scheduleTopologyRefresh(level, receiverPositions);
-        }
+    private void refreshAffectedReceivers(Level level, BlockPos pos, BlockState previousState) {
+        SignalRuntime runtime = SignalRuntimeAccess.get(level);
+        runtime.scheduleTopologyRefresh(level, runtime.ductNetworkManager().getAffectedReceiversForChange(
+                level, pos, previousState, runtime.receiverIndex(), runtime.continuousSourceRepository()));
     }
 
     private static BooleanProperty propertyFor(Direction direction) {

@@ -35,8 +35,10 @@ public class DuctNetworkManager {
 
     public boolean unindexChunk(int x, int z) {
         boolean changed = loadedDucts.removeIf(p -> (p.getX() >> 4) == x && (p.getZ() >> 4) == z);
-        routeCache.clear();
-        cache.posToNetwork.clear();
+        if (changed) {
+            routeCache.clear();
+            cache.posToNetwork.clear();
+        }
         return changed;
     }
 
@@ -163,102 +165,61 @@ public class DuctNetworkManager {
         return List.copyOf(candidates);
     }
 
-    public Collection<BlockPos> getAffectedReceiversAfterPlacement(
+    public Collection<BlockPos> getAffectedReceiversForChange(
             Level level,
-            BlockPos placedPos,
+            BlockPos pos,
+            BlockState previousState,
             SignalReceiverIndex receiverIndex,
             ContinuousSignalSourceRepository repository) {
-        indexDuct(placedPos);
-        DuctNetwork network = getCachedOrDiscoveredNetwork(level, placedPos);
-        // An oversized component cannot be partially registered as a valid smaller network.
-        if (network == null) return List.copyOf(receiverIndex.getAll());
-        return collectAffectedReceivers(level, receiverIndex, repository, Set.of(network));
-    }
-
-    public Collection<BlockPos> getAffectedReceiversForInterfaceChange(
-            Level level,
-            BlockPos ductPos,
-            SignalReceiverIndex receiverIndex,
-            ContinuousSignalSourceRepository repository) {
+        if (isDuct(level, pos)) loadedDucts.add(pos.immutable());
+        else loadedDucts.remove(pos);
         routeCache.clear();
-        LinkedHashSet<DuctNetwork> affectedNetworks = new LinkedHashSet<>();
+        cache.posToNetwork.clear();
 
-        DuctNetwork previousNetwork = cache.posToNetwork.get(ductPos);
-        if (previousNetwork != null) {
-            affectedNetworks.add(previousNetwork);
-            unregisterNetwork(cache, previousNetwork);
-        }
-
-        DuctNetwork refreshedNetwork = getCachedOrDiscoveredNetwork(level, ductPos);
-        if (refreshedNetwork != null) {
-            affectedNetworks.add(refreshedNetwork);
-        }
-
-        return collectAffectedReceivers(level, receiverIndex, repository, affectedNetworks);
-    }
-
-    public Collection<BlockPos> getAffectedReceiversBeforeRemoval(
-            Level level,
-            BlockPos removedPos,
-            SignalReceiverIndex receiverIndex,
-            ContinuousSignalSourceRepository repository) {
-        DuctNetwork network = getCachedOrDiscoveredNetwork(level, removedPos);
-        if (network == null) {
-            return List.of();
-        }
-        return collectAffectedReceivers(level, receiverIndex, repository, Set.of(network));
-    }
-
-    public Collection<BlockPos> getAffectedReceiversAfterRemoval(
-            Level level,
-            BlockPos removedPos,
-            SignalReceiverIndex receiverIndex,
-            ContinuousSignalSourceRepository repository) {
-        routeCache.clear();
-        loadedDucts.remove(removedPos);
-        DuctNetwork removedNetwork = cache.posToNetwork.remove(removedPos);
-
-        LinkedHashSet<DuctNetwork> affectedNetworks = new LinkedHashSet<>();
-        if (removedNetwork != null) {
-            unregisterNetwork(cache, removedNetwork);
-            affectedNetworks.add(removedNetwork);
-        }
-
-        Set<BlockPos> visited = new HashSet<>();
+        // Removed interfaces remain notification origins even after their network cache expires.
+        Set<BlockPos> previousEndpoints = new LinkedHashSet<>();
+        Set<BlockPos> seeds = new LinkedHashSet<>();
+        seeds.add(pos);
         for (Direction direction : Direction.values()) {
-            BlockPos neighbor = removedPos.relative(direction);
-            if (!isDuct(level, neighbor) || visited.contains(neighbor)) {
-                continue;
-            }
-
-            Set<BlockPos> component = discoverComponent(level, neighbor, visited);
-            if (component.isEmpty()) {
-                continue;
-            }
-
-            DuctNetwork splitNetwork = createNetwork(level, cache, component);
-            registerNetwork(cache, splitNetwork);
-            affectedNetworks.add(splitNetwork);
+            BlockPos neighbor = pos.relative(direction);
+            seeds.add(neighbor);
+            if (previousState.is(CIBlocks.BLASTPROOF_DUCT.get())
+                    && DuctTransmissionHelper.hasInterface(previousState, direction))
+                previousEndpoints.add(neighbor);
+            if (isDuct(level, neighbor)
+                    && DuctTransmissionHelper.hasInterface(
+                            level.getBlockState(neighbor), direction.getOpposite()))
+                previousEndpoints.add(pos);
         }
 
-        return collectAffectedReceivers(level, receiverIndex, repository, affectedNetworks);
+        Set<DuctNetwork> networks = new LinkedHashSet<>();
+        for (BlockPos seed : seeds) {
+            if (!isDuct(level, seed)) continue;
+            DuctNetwork network = getCachedOrDiscoveredNetwork(level, seed);
+            // An oversized component can disable previously valid paths anywhere in the network.
+            if (network == null) return List.copyOf(receiverIndex.getAll());
+            networks.add(network);
+        }
+        return collectAffectedReceivers(receiverIndex, repository, networks, previousEndpoints);
     }
 
     private Collection<BlockPos> collectAffectedReceivers(
-            Level level,
             SignalReceiverIndex receiverIndex,
             ContinuousSignalSourceRepository repository,
-            Collection<DuctNetwork> networks) {
+            Collection<DuctNetwork> networks,
+            Collection<BlockPos> previousEndpoints) {
         int maxPropagationCost =
                 repository.getActiveSources().stream()
                         .mapToInt(source -> Math.abs(source.signal().amplitude()))
                         .max()
                         .orElse(-1);
-        if (maxPropagationCost < 0 || networks.isEmpty()) {
+        if (maxPropagationCost < 0) {
             return List.of();
         }
 
         LinkedHashSet<BlockPos> receivers = new LinkedHashSet<>();
+        for (BlockPos endpoint : previousEndpoints)
+            receivers.addAll(receiverIndex.getWithinManhattanDistance(endpoint, maxPropagationCost));
         for (BlockPos receiverPos : receiverIndex.getAll()) {
             for (DuctNetwork network : networks) {
                 if (network.canPotentiallyReach(receiverPos, maxPropagationCost)) {
@@ -413,12 +374,6 @@ public class DuctNetworkManager {
     private void registerNetwork(LevelCache cache, DuctNetwork network) {
         for (BlockPos pos : network.positions()) {
             cache.posToNetwork.put(pos, network);
-        }
-    }
-
-    private void unregisterNetwork(LevelCache cache, DuctNetwork network) {
-        for (BlockPos pos : network.positions()) {
-            cache.posToNetwork.remove(pos, network);
         }
     }
 

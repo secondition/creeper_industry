@@ -33,8 +33,8 @@ public final class SignalRuntime implements AutoCloseable {
     private final Set<BlockPos> activeTargets = new LinkedHashSet<>();
     private final Set<BlockPos> registrations = new LinkedHashSet<>();
     private final Set<BlockPos> topologyChanges = new LinkedHashSet<>();
-    private final PriorityQueue<Arrival> arrivals =
-            new PriorityQueue<>(
+    private final NavigableSet<Arrival> arrivals =
+            new TreeSet<>(
                     Comparator.comparingLong(Arrival::time).thenComparingLong(Arrival::order));
     private final Map<
                     net.minecraft.world.level.ChunkPos, net.minecraft.world.level.chunk.ChunkAccess>
@@ -128,9 +128,10 @@ public final class SignalRuntime implements AutoCloseable {
         receivers.unregister(pos);
         registrations.remove(pos);
         activeTargets.remove(pos);
-        states.remove(pos);
+        ReceiverState state = states.remove(pos);
         topologyChanges.remove(pos);
-        arrivals.removeIf(a -> a.target().equals(pos));
+        if (state != null)
+            for (Arrival arrival : state.pending) arrivals.remove(arrival);
     }
 
     public void refreshReceiver(Level level, BlockPos pos) {
@@ -286,7 +287,9 @@ public final class SignalRuntime implements AutoCloseable {
             ReceiverState state,
             PathKey key,
             Contribution value) {
-        arrivals.add(new Arrival(at, sequence++, pos.immutable(), state, key, value));
+        Arrival arrival = new Arrival(at, sequence++, pos.immutable(), state, key, value);
+        arrivals.add(arrival);
+        state.pending.add(arrival);
         state.pendingTimes.merge(at, 1, Integer::sum);
         if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof SignalReceiver receiver)
             receiver.scheduleSignalChange(state.pendingTimes.firstKey());
@@ -317,38 +320,29 @@ public final class SignalRuntime implements AutoCloseable {
             for (BlockPos pos : List.copyOf(topologyChanges)) {
                 ReceiverState state = states.get(pos);
                 if (state == null) continue;
+                Map<UUID, Map<String, Long>> delays = state.pathDelays();
                 for (ContinuousSignalSource source : sources.getActiveSources()) {
                     Map<String, DuctNetworkManager.Route> next = routes(level, source, pos);
-                    Set<PathKey> keys = new HashSet<>(state.contributions.keySet());
-                    for (Arrival pending : arrivals)
-                        if (pending.owner() == state) keys.add(pending.key());
-                    for (PathKey key : keys)
-                        if (key.source().equals(source.id()) && !next.containsKey(key.path())) {
-                            long travel =
-                                    state.contributions.containsKey(key)
-                                            ? state.contributions.get(key).delay()
-                                            : 20;
-                            for (Arrival pending : arrivals)
-                                if (pending.owner() == state
-                                        && pending.key().equals(key)
-                                        && pending.value() != null)
-                                    travel = Math.max(travel, pending.value().delay());
+                    for (var path : delays.getOrDefault(source.id(), Map.of()).entrySet())
+                        if (!next.containsKey(path.getKey())) {
                             // Already emitted versions finish on their original route; a delayed
                             // cutoff follows them.
-                            queue(level, now + travel, pos, state, key, null);
+                            queue(level, now + path.getValue(), pos, state,
+                                    new PathKey(source.id(), path.getKey()), null);
                         }
                     scheduleChange(level, new SourceChange(now, null, source), List.of(pos));
                 }
             }
             topologyChanges.clear();
         }
-        while (!arrivals.isEmpty() && arrivals.peek().time() <= now) {
-            long at = arrivals.peek().time();
+        while (!arrivals.isEmpty() && arrivals.first().time() <= now) {
+            long at = arrivals.first().time();
             Map<ReceiverState, Map<PathKey, Contribution>> changed = new HashMap<>();
-            while (!arrivals.isEmpty() && arrivals.peek().time() == at) {
-                Arrival arrival = arrivals.remove();
+            while (!arrivals.isEmpty() && arrivals.first().time() == at) {
+                Arrival arrival = arrivals.pollFirst();
                 ReceiverState state = states.get(arrival.target());
                 if (state != arrival.owner()) continue;
+                state.pending.remove(arrival);
                 state.pendingTimes.computeIfPresent(at, (t, count) -> count > 1 ? count - 1 : null);
                 if (level.hasChunkAt(arrival.target())
                         && level.getBlockEntity(arrival.target())
@@ -461,6 +455,7 @@ public final class SignalRuntime implements AutoCloseable {
 
     private static final class ReceiverState {
         final TreeMap<Long, Integer> pendingTimes = new TreeMap<>();
+        final Set<Arrival> pending = new HashSet<>();
         final Map<PathKey, Contribution> contributions = new HashMap<>();
         final Map<Long, Integer> cycles = new LinkedHashMap<>();
         CompositeWaveform wave = new CompositeWaveform(List.of());
@@ -469,6 +464,18 @@ public final class SignalRuntime implements AutoCloseable {
 
         ReceiverState(long now) {
             anchor = settled = now;
+        }
+
+        Map<UUID, Map<String, Long>> pathDelays() {
+            Map<UUID, Map<String, Long>> delays = new HashMap<>();
+            contributions.forEach((key, value) -> delays
+                    .computeIfAbsent(key.source(), id -> new HashMap<>())
+                    .merge(key.path(), value.delay(), Math::max));
+            for (Arrival arrival : pending)
+                if (arrival.value() != null)
+                    delays.computeIfAbsent(arrival.key().source(), id -> new HashMap<>())
+                            .merge(arrival.key().path(), arrival.value().delay(), Math::max);
+            return delays;
         }
 
         void settle(long time) {
