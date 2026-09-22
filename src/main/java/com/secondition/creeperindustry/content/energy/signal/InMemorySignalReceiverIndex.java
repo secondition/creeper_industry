@@ -1,48 +1,56 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.*;
+
+/** Loaded receiver positions bucketed by chunk. No world block scans. */
 public class InMemorySignalReceiverIndex implements SignalReceiverIndex {
-    private final Set<BlockPos> indexedReceivers = ConcurrentHashMap.newKeySet();
+    private final Map<Long, Set<BlockPos>> buckets = new HashMap<>();
 
-    @Override
+    private static long key(int x, int z) {
+        return ((long) x << 32) ^ (z & 0xffffffffL);
+    }
+
     public void register(BlockPos pos) {
-        indexedReceivers.add(pos.immutable());
+        buckets.computeIfAbsent(key(pos.getX() >> 4, pos.getZ() >> 4), k -> new HashSet<>())
+                .add(pos.immutable());
     }
 
-    @Override
     public void unregister(BlockPos pos) {
-        indexedReceivers.remove(pos);
-    }
-
-    @Override
-    public Collection<BlockPos> getAll() {
-        return java.util.List.copyOf(indexedReceivers);
-    }
-
-    @Override
-    public Collection<BlockPos> getWithinManhattanDistance(BlockPos center, int maxDistance) {
-        if (maxDistance < 0) {
-            return java.util.List.of();
+        long key = key(pos.getX() >> 4, pos.getZ() >> 4);
+        Set<BlockPos> set = buckets.get(key);
+        if (set != null) {
+            set.remove(pos);
+            if (set.isEmpty()) buckets.remove(key);
         }
-
-        return indexedReceivers.stream()
-                .filter(pos -> computeManhattanDistance(center, pos) <= maxDistance)
-                .map(BlockPos::immutable)
-                .toList();
     }
 
-    @Override
+    public Collection<BlockPos> getAll() {
+        return buckets.values().stream().flatMap(Collection::stream).toList();
+    }
+
+    public Collection<BlockPos> getWithinManhattanDistance(BlockPos center, int radius) {
+        return within(Vec3.atCenterOf(center), radius);
+    }
+
+    public Collection<BlockPos> within(Vec3 center, double radius) {
+        List<BlockPos> result = new ArrayList<>();
+        int minX = ((int) Math.floor(center.x - radius)) >> 4,
+                maxX = ((int) Math.floor(center.x + radius)) >> 4;
+        int minZ = ((int) Math.floor(center.z - radius)) >> 4,
+                maxZ = ((int) Math.floor(center.z + radius)) >> 4;
+        for (var entry : buckets.entrySet()) {
+            int x = (int) (entry.getKey() >> 32), z = (int) (long) entry.getKey();
+            if (x < minX || x > maxX || z < minZ || z > maxZ) continue;
+            for (BlockPos pos : entry.getValue())
+                if (Vec3.atCenterOf(pos).distanceToSqr(center) < radius * radius) result.add(pos);
+        }
+        return result;
+    }
+
     public void clear() {
-        indexedReceivers.clear();
-    }
-
-    private int computeManhattanDistance(BlockPos left, BlockPos right) {
-        return Math.abs(left.getX() - right.getX())
-                + Math.abs(left.getY() - right.getY())
-                + Math.abs(left.getZ() - right.getZ());
+        buckets.clear();
     }
 }

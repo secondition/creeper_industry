@@ -1,7 +1,17 @@
 {
   "type": "creeper_industry:biosphere_cultivation",
   "biosphere": "monster",
-  "template": { "item": "minecraft:slime_spawn_egg" },
-  "outputs": [{ "id": "minecraft:slime_ball", "count": 1 }],
-  "signal": { "minimum_amplitude": 9, "instantaneous": "positive" }
+  "template": {
+    "item": "minecraft:slime_spawn_egg"
+  },
+  "outputs": [
+    {
+      "id": "minecraft:slime_ball",
+      "count": 1
+    }
+  ],
+  "signal": {
+    "minimum_amplitude": 9
+  },
+  "processing_units": 20
 }

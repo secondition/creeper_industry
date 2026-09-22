@@ -1,7 +1,5 @@
 package com.secondition.creeperindustry.content.production.biosphere;
 
-import javax.annotation.Nullable;
-
 import com.secondition.creeperindustry.CIMenuTypes;
 import com.secondition.creeperindustry.content.production.biosphere.recipe.BiosphereRecipeService;
 
@@ -17,6 +15,8 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
+import javax.annotation.Nullable;
+
 public class BiosphereMenu extends AbstractContainerMenu {
     private static final int TEMPLATE_SLOT_INDEX = 0;
     private static final int CATALYST_SLOT_INDEX = 1;
@@ -29,8 +29,10 @@ public class BiosphereMenu extends AbstractContainerMenu {
 
     private final Container biosphere;
     private final BiosphereType biosphereType;
+    private final ContainerData data;
 
-    public BiosphereMenu(int containerId, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
+    public BiosphereMenu(
+            int containerId, Inventory playerInventory, RegistryFriendlyByteBuf extraData) {
         this(containerId, playerInventory, createClientContext(playerInventory, extraData));
     }
 
@@ -38,47 +40,60 @@ public class BiosphereMenu extends AbstractContainerMenu {
         this(containerId, playerInventory, context.container(), context.data(), context.type());
     }
 
-    public BiosphereMenu(int containerId, Inventory playerInventory, Container biosphere, ContainerData data) {
+    public BiosphereMenu(
+            int containerId, Inventory playerInventory, Container biosphere, ContainerData data) {
         this(containerId, playerInventory, biosphere, data, resolveBiosphereType(biosphere));
     }
 
-    private BiosphereMenu(int containerId, Inventory playerInventory, Container biosphere, ContainerData data, BiosphereType biosphereType) {
+    private BiosphereMenu(
+            int containerId,
+            Inventory playerInventory,
+            Container biosphere,
+            ContainerData data,
+            BiosphereType biosphereType) {
         super(CIMenuTypes.BIOSPHERE.get(), containerId);
         checkContainerSize(biosphere, MACHINE_SLOT_COUNT);
-        checkContainerDataCount(data, 0);
+        checkContainerDataCount(data, 3);
+        this.data = data;
         this.biosphere = biosphere;
         this.biosphereType = biosphereType;
 
-        addSlot(new Slot(biosphere, TEMPLATE_SLOT_INDEX, 44, 35) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return BiosphereRecipeService.isValidTemplate(
-                        playerInventory.player.level(),
-                        BiosphereMenu.this.biosphereType,
-                        stack
-                );
-            }
-        });
-        addSlot(new Slot(biosphere, CATALYST_SLOT_INDEX, 80, 35) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return BiosphereRecipeService.isValidCatalyst(
-                        playerInventory.player.level(),
-                        BiosphereMenu.this.biosphereType,
-                        stack
-                );
-            }
-        });
-        addSlot(new Slot(biosphere, OUTPUT_SLOT_INDEX, 116, 35) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false;
-            }
-        });
+        addSlot(
+                new Slot(biosphere, TEMPLATE_SLOT_INDEX, 44, 35) {
+                    @Override
+                    public boolean mayPlace(ItemStack stack) {
+                        return BiosphereRecipeService.isValidTemplate(
+                                playerInventory.player.level(),
+                                BiosphereMenu.this.biosphereType,
+                                stack);
+                    }
+                });
+        addSlot(
+                new Slot(biosphere, CATALYST_SLOT_INDEX, 80, 35) {
+                    @Override
+                    public boolean mayPlace(ItemStack stack) {
+                        return BiosphereRecipeService.isValidCatalyst(
+                                playerInventory.player.level(),
+                                BiosphereMenu.this.biosphereType,
+                                stack);
+                    }
+                });
+        addSlot(
+                new Slot(biosphere, OUTPUT_SLOT_INDEX, 116, 35) {
+                    @Override
+                    public boolean mayPlace(ItemStack stack) {
+                        return false;
+                    }
+                });
 
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                addSlot(new Slot(playerInventory, column + row * 9 + 9, 8 + column * 18, 84 + row * 18));
+                addSlot(
+                        new Slot(
+                                playerInventory,
+                                column + row * 9 + 9,
+                                8 + column * 18,
+                                84 + row * 18));
             }
         }
 
@@ -87,6 +102,18 @@ public class BiosphereMenu extends AbstractContainerMenu {
         }
 
         addDataSlots(data);
+    }
+
+    public int progress() {
+        return data.get(0);
+    }
+
+    public int requiredUnits() {
+        return data.get(1);
+    }
+
+    public int structureSize() {
+        return data.get(2);
     }
 
     @Override
@@ -103,12 +130,16 @@ public class BiosphereMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stackInSlot, PLAYER_INV_START, HOTBAR_END, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (BiosphereRecipeService.isValidTemplate(player.level(), biosphereType, stackInSlot)) {
-            if (!moveItemStackTo(stackInSlot, TEMPLATE_SLOT_INDEX, TEMPLATE_SLOT_INDEX + 1, false)) {
+        } else if (BiosphereRecipeService.isValidTemplate(
+                player.level(), biosphereType, stackInSlot)) {
+            if (!moveItemStackTo(
+                    stackInSlot, TEMPLATE_SLOT_INDEX, TEMPLATE_SLOT_INDEX + 1, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (BiosphereRecipeService.isValidCatalyst(player.level(), biosphereType, stackInSlot)) {
-            if (!moveItemStackTo(stackInSlot, CATALYST_SLOT_INDEX, CATALYST_SLOT_INDEX + 1, false)) {
+        } else if (BiosphereRecipeService.isValidCatalyst(
+                player.level(), biosphereType, stackInSlot)) {
+            if (!moveItemStackTo(
+                    stackInSlot, CATALYST_SLOT_INDEX, CATALYST_SLOT_INDEX + 1, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (index < PLAYER_INV_END) {
@@ -150,19 +181,30 @@ public class BiosphereMenu extends AbstractContainerMenu {
 
     @Nullable
     public BiosphereBlockEntity getBiosphereBlockEntity() {
-        return biosphere instanceof BiosphereBlockEntity biosphereBlockEntity ? biosphereBlockEntity : null;
+        return biosphere instanceof BiosphereBlockEntity biosphereBlockEntity
+                ? biosphereBlockEntity
+                : null;
     }
 
-    private static ClientContext createClientContext(Inventory playerInventory, @Nullable RegistryFriendlyByteBuf extraData) {
+    private static ClientContext createClientContext(
+            Inventory playerInventory, @Nullable RegistryFriendlyByteBuf extraData) {
         if (extraData == null) {
-            return new ClientContext(new SimpleContainer(MACHINE_SLOT_COUNT), new SimpleContainerData(0), BiosphereType.BOTANICAL);
+            return new ClientContext(
+                    new SimpleContainer(MACHINE_SLOT_COUNT),
+                    new SimpleContainerData(3),
+                    BiosphereType.BOTANICAL);
         }
 
         BlockPos pos = extraData.readBlockPos();
-        if (playerInventory.player.level().getBlockEntity(pos) instanceof BiosphereBlockEntity biosphere) {
-            return new ClientContext(biosphere, biosphere.dataAccess(), biosphere.getBiosphereType());
+        if (playerInventory.player.level().getBlockEntity(pos)
+                instanceof BiosphereBlockEntity biosphere) {
+            return new ClientContext(
+                    biosphere, biosphere.dataAccess(), biosphere.getBiosphereType());
         }
-        return new ClientContext(new SimpleContainer(MACHINE_SLOT_COUNT), new SimpleContainerData(0), BiosphereType.BOTANICAL);
+        return new ClientContext(
+                new SimpleContainer(MACHINE_SLOT_COUNT),
+                new SimpleContainerData(3),
+                BiosphereType.BOTANICAL);
     }
 
     private static BiosphereType resolveBiosphereType(Container biosphere) {
@@ -171,6 +213,5 @@ public class BiosphereMenu extends AbstractContainerMenu {
                 : BiosphereType.BOTANICAL;
     }
 
-    private record ClientContext(Container container, ContainerData data, BiosphereType type) {
-    }
+    private record ClientContext(Container container, ContainerData data, BiosphereType type) {}
 }

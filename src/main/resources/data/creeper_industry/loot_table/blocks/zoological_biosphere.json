@@ -2,10 +2,19 @@
   "type": "minecraft:block",
   "pools": [
     {
-      "bonus_rolls": 0.0,
+      "rolls": 1,
       "conditions": [
         {
           "condition": "minecraft:survives_explosion"
+        },
+        {
+          "condition": "minecraft:block_state_property",
+          "block": "creeper_industry:zoological_biosphere",
+          "properties": {
+            "x_part": "0",
+            "y_part": "0",
+            "z_part": "0"
+          }
         }
       ],
       "entries": [
@@ -13,9 +22,7 @@
           "type": "minecraft:item",
           "name": "creeper_industry:zoological_biosphere"
         }
-      ],
-      "rolls": 1.0
+      ]
     }
-  ],
-  "random_sequence": "creeper_industry:blocks/zoological_biosphere"
+  ]
 }

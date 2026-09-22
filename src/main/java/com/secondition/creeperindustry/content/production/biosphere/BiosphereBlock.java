@@ -1,12 +1,5 @@
 package com.secondition.creeperindustry.content.production.biosphere;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.annotation.Nullable;
-
 import com.secondition.creeperindustry.foundation.blockEntity.SimpleEntityBlock;
 
 import net.minecraft.core.BlockPos;
@@ -15,27 +8,32 @@ import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.material.FluidState;
-import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.annotation.Nullable;
 
 public abstract class BiosphereBlock extends SimpleEntityBlock {
     public static final int WIDTH_X = 3;
@@ -47,18 +45,20 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
     public static final IntegerProperty Z_PART = IntegerProperty.create("z_part", 0, DEPTH_Z - 1);
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    private static final ThreadLocal<Set<BlockPos>> REMOVING_STRUCTURES = ThreadLocal.withInitial(HashSet::new);
+    private static final ThreadLocal<Set<BlockPos>> REMOVING_STRUCTURES =
+            ThreadLocal.withInitial(HashSet::new);
 
     private final BiosphereType type;
 
     protected BiosphereBlock(BiosphereType type, BlockBehaviour.Properties properties) {
         super(properties);
         this.type = type;
-        registerDefaultState(defaultBlockState()
-                .setValue(X_PART, 0)
-                .setValue(Y_PART, 0)
-                .setValue(Z_PART, 0)
-                .setValue(FACING, net.minecraft.core.Direction.NORTH));
+        registerDefaultState(
+                defaultBlockState()
+                        .setValue(X_PART, 0)
+                        .setValue(Y_PART, 0)
+                        .setValue(Z_PART, 0)
+                        .setValue(FACING, net.minecraft.core.Direction.NORTH));
     }
 
     public BiosphereType getType() {
@@ -68,56 +68,7 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
     @Override
     @Nullable
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        Level level = context.getLevel();
-        BlockPos origin = context.getClickedPos();
-        net.minecraft.core.Direction facing = context.getHorizontalDirection();
-        for (BlockPos partPos : iterateStructure(origin, facing)) {
-            if (!level.isInWorldBounds(partPos) || !level.getWorldBorder().isWithinBounds(partPos)) {
-                return null;
-            }
-            if (!level.getBlockState(partPos).canBeReplaced(context)) {
-                return null;
-            }
-        }
-        return defaultBlockState().setValue(FACING, facing);
-    }
-
-    @Override
-    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
-        super.setPlacedBy(level, pos, state, placer, stack);
-        if (level.isClientSide()) {
-            return;
-        }
-
-        net.minecraft.core.Direction facing = state.getValue(FACING);
-        record PlacedPart(BlockPos pos, BlockState previousState) {
-        }
-        List<PlacedPart> placedParts = new ArrayList<>(WIDTH_X * HEIGHT_Y * DEPTH_Z - 1);
-        for (int x = 0; x < WIDTH_X; x++) {
-            for (int y = 0; y < HEIGHT_Y; y++) {
-                for (int z = 0; z < DEPTH_Z; z++) {
-                    if (x == 0 && y == 0 && z == 0) {
-                        continue;
-                    }
-                    BlockPos partPos = getPartPos(pos, facing, x, y, z);
-                    BlockState previousState = level.getBlockState(partPos);
-                    boolean placed = level.setBlock(partPos, state
-                            .setValue(FACING, facing)
-                            .setValue(X_PART, x)
-                            .setValue(Y_PART, y)
-                            .setValue(Z_PART, z), Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_SUPPRESS_DROPS);
-                    if (placed) {
-                        placedParts.add(new PlacedPart(partPos, previousState));
-                    }
-                }
-            }
-        }
-
-        for (PlacedPart placedPart : placedParts) {
-            BlockState partState = level.getBlockState(placedPart.pos());
-            level.sendBlockUpdated(placedPart.pos(), placedPart.previousState(), partState, Block.UPDATE_ALL);
-            level.updateNeighborsAt(placedPart.pos(), partState.getBlock());
-        }
+        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
@@ -127,7 +78,8 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+    protected InteractionResult useWithoutItem(
+            BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (tryCycleOutputSelection(level, pos, state, player)) {
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
@@ -145,8 +97,7 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
             BlockPos pos,
             Player player,
             InteractionHand hand,
-            BlockHitResult hitResult
-    ) {
+            BlockHitResult hitResult) {
         if (openMenu(level, pos, state, player)) {
             return ItemInteractionResult.sidedSuccess(level.isClientSide());
         }
@@ -154,44 +105,14 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
     }
 
     @Override
-    protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean movedByPiston) {
-        if (state.is(newState.getBlock())) {
-            super.onRemove(state, level, pos, newState, movedByPiston);
-            return;
-        }
-
-        if (!level.isClientSide()) {
-            BlockPos controllerPos = getControllerPos(pos, state);
-            Set<BlockPos> removing = REMOVING_STRUCTURES.get();
-            boolean rootRemoval = removing.add(controllerPos.immutable());
-            if (rootRemoval) {
-                try {
-                    if (level.getBlockEntity(controllerPos) instanceof BiosphereBlockEntity biosphere) {
-                        Containers.dropContents(level, controllerPos, biosphere);
-                    }
-                    removeOtherParts(level, controllerPos, pos);
-                } finally {
-                    removing.remove(controllerPos);
-                    if (removing.isEmpty()) {
-                        REMOVING_STRUCTURES.remove();
-                    }
-                }
-            }
-        }
-
-        super.onRemove(state, level, pos, newState, movedByPiston);
-    }
-
-    @Override
-    public boolean onDestroyedByPlayer(
-            BlockState state,
-            Level level,
-            BlockPos pos,
-            Player player,
-            boolean willHarvest,
-            FluidState fluid
-    ) {
-        return !level.isClientSide() && super.onDestroyedByPlayer(state, level, pos, player, willHarvest, fluid);
+    protected void onRemove(
+            BlockState state, Level level, BlockPos pos, BlockState next, boolean moved) {
+        if (!state.is(next.getBlock())
+                && !level.isClientSide()
+                && isController(state)
+                && level.getBlockEntity(pos) instanceof BiosphereBlockEntity machine)
+            Containers.dropContents(level, pos, machine);
+        super.onRemove(state, level, pos, next, moved);
     }
 
     @Override
@@ -200,13 +121,15 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
     }
 
     @Override
-    protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+    protected VoxelShape getShape(
+            BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return Shapes.block();
     }
 
     @Override
-    protected VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return getApproximateShape(state);
+    protected VoxelShape getCollisionShape(
+            BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return Shapes.block();
     }
 
     public static boolean isController(BlockState state) {
@@ -216,20 +139,26 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
     }
 
     public static BlockPos getControllerPos(BlockPos pos, BlockState state) {
-        BlockPos worldOffset = rotateOffset(
-                state.getValue(FACING),
-                state.getValue(X_PART),
-                state.getValue(Y_PART),
-                state.getValue(Z_PART)
-        );
+        BlockPos worldOffset =
+                rotateOffset(
+                        state.getValue(FACING),
+                        state.getValue(X_PART),
+                        state.getValue(Y_PART),
+                        state.getValue(Z_PART));
         return pos.subtract(worldOffset);
     }
 
-    public static BlockPos getPartPos(BlockPos controllerPos, net.minecraft.core.Direction facing, int xPart, int yPart, int zPart) {
+    public static BlockPos getPartPos(
+            BlockPos controllerPos,
+            net.minecraft.core.Direction facing,
+            int xPart,
+            int yPart,
+            int zPart) {
         return controllerPos.offset(rotateOffset(facing, xPart, yPart, zPart));
     }
 
-    public static AABB getStructureBounds(BlockPos controllerPos, net.minecraft.core.Direction facing) {
+    public static AABB getStructureBounds(
+            BlockPos controllerPos, net.minecraft.core.Direction facing) {
         int minX = controllerPos.getX();
         int minY = controllerPos.getY();
         int minZ = controllerPos.getZ();
@@ -255,8 +184,7 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
                 state.getValue(X_PART),
                 state.getValue(Y_PART),
                 state.getValue(Z_PART),
-                state.getValue(FACING)
-        );
+                state.getValue(FACING));
     }
 
     private boolean openMenu(Level level, BlockPos pos, BlockState state, Player player) {
@@ -274,7 +202,8 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
         return true;
     }
 
-    private boolean tryCycleOutputSelection(Level level, BlockPos pos, BlockState state, Player player) {
+    private boolean tryCycleOutputSelection(
+            Level level, BlockPos pos, BlockState state, Player player) {
         if (type == BiosphereType.BOTANICAL || !player.isShiftKeyDown()) {
             return false;
         }
@@ -288,7 +217,8 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
     }
 
     private void removeOtherParts(Level level, BlockPos controllerPos, BlockPos removedPos) {
-        for (BlockPos partPos : iterateStructure(controllerPos, getStructureFacing(level, controllerPos))) {
+        for (BlockPos partPos :
+                iterateStructure(controllerPos, getStructureFacing(level, controllerPos))) {
             if (partPos.equals(removedPos)) {
                 continue;
             }
@@ -299,7 +229,8 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
         }
     }
 
-    private static Iterable<BlockPos> iterateStructure(BlockPos origin, net.minecraft.core.Direction facing) {
+    private static Iterable<BlockPos> iterateStructure(
+            BlockPos origin, net.minecraft.core.Direction facing) {
         List<BlockPos> positions = new ArrayList<>(WIDTH_X * HEIGHT_Y * DEPTH_Z);
         for (int x = 0; x < WIDTH_X; x++) {
             for (int y = 0; y < HEIGHT_Y; y++) {
@@ -311,13 +242,15 @@ public abstract class BiosphereBlock extends SimpleEntityBlock {
         return positions;
     }
 
-    private static BlockPos rotateOffset(net.minecraft.core.Direction facing, int xPart, int yPart, int zPart) {
+    private static BlockPos rotateOffset(
+            net.minecraft.core.Direction facing, int xPart, int yPart, int zPart) {
         return switch (facing) {
             case NORTH -> new BlockPos(xPart, yPart, zPart);
             case EAST -> new BlockPos(-zPart, yPart, xPart);
             case SOUTH -> new BlockPos(-xPart, yPart, -zPart);
             case WEST -> new BlockPos(zPart, yPart, -xPart);
-            default -> throw new IllegalArgumentException("Unsupported biosphere facing: " + facing);
+            default ->
+                    throw new IllegalArgumentException("Unsupported biosphere facing: " + facing);
         };
     }
 

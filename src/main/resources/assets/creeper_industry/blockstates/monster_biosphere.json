@@ -1,9 +1,20 @@
 {
-  "multipart": [
-    {
-      "apply": {
-        "model": "creeper_industry:block/monster_biosphere"
-      }
+  "variants": {
+    "facing=north": {
+      "model": "creeper_industry:block/monster_biosphere_controller",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "creeper_industry:block/monster_biosphere_controller",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "creeper_industry:block/monster_biosphere_controller",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "creeper_industry:block/monster_biosphere_controller",
+      "y": 270
     }
-  ]
+  }
 }

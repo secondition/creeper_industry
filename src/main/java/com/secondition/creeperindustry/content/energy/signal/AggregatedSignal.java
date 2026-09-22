@@ -8,17 +8,15 @@ public record AggregatedSignal(
         ResourceKey<Level> level,
         BlockPos targetPos,
         long gameTime,
-        SignalDefinition signal,
-        int instantaneousValue,
+        double amplitude,
+        double instantaneousValue,
         int contributionCount,
-        int strongestPropagationCost
-) {
-    public AggregatedSignal {
-        if (contributionCount <= 0) {
-            throw new IllegalArgumentException("Contribution count must be positive");
-        }
-        if (strongestPropagationCost < 0) {
-            throw new IllegalArgumentException("Propagation cost cannot be negative");
-        }
+        int strongestPropagationCost,
+        boolean fast,
+        double compositePeriodTicks,
+        int completedCycles,
+        boolean changed) {
+    public int processingUnits(double requirement) {
+        return amplitude > requirement ? (fast ? completedCycles : changed ? 1 : 0) : 0;
     }
 }

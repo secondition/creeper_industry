@@ -28,14 +28,14 @@ public final class EntityWaveImpactService {
         Vec3 origin = emission.origin();
         Explosion explosion = emission.originalExplosion();
         double queryRadius = Math.max(currentRadius, 0.25);
-        AABB queryBox = new AABB(
-                origin.x - queryRadius,
-                origin.y - queryRadius,
-                origin.z - queryRadius,
-                origin.x + queryRadius,
-                origin.y + queryRadius,
-                origin.z + queryRadius
-        );
+        AABB queryBox =
+                new AABB(
+                        origin.x - queryRadius,
+                        origin.y - queryRadius,
+                        origin.z - queryRadius,
+                        origin.x + queryRadius,
+                        origin.y + queryRadius,
+                        origin.z + queryRadius);
 
         for (Entity entity : level.getEntitiesOfClass(Entity.class, queryBox, e -> true)) {
             if (entity.isSpectator() || entity == emission.directSource()) {
@@ -57,15 +57,15 @@ public final class EntityWaveImpactService {
             }
 
             wave.markHit(entity.getUUID());
-            if (entity.ignoreExplosion(explosion)) {
+            if (explosion != null && entity.ignoreExplosion(explosion)) {
                 continue;
             }
 
-            double effectiveAmplitude = WavePropagationMath.effectiveAmplitude(
-                    emission.sourceAmplitude(),
-                    closestDist,
-                    emission.profile().attenuationPerBlock()
-            );
+            double effectiveAmplitude =
+                    WavePropagationMath.effectiveAmplitude(
+                            Math.abs(emission.sourceAmplitude()),
+                            closestDist,
+                            emission.profile().attenuationPerBlock());
             if (effectiveAmplitude <= 0) {
                 continue;
             }
@@ -74,9 +74,19 @@ public final class EntityWaveImpactService {
         }
     }
 
-    private void applyImpact(ServerLevel level, Entity entity, PulseWaveEmission emission, Vec3 origin, AABB entityBox, double effectiveAmplitude) {
-        double impulse = Math.max(0.0, effectiveAmplitude - effectProfile.impulseThreshold()) * effectProfile.impulseScale();
-        double damage = Math.max(0.0, effectiveAmplitude - effectProfile.damageThreshold()) * effectProfile.damageScale();
+    private void applyImpact(
+            ServerLevel level,
+            Entity entity,
+            PulseWaveEmission emission,
+            Vec3 origin,
+            AABB entityBox,
+            double effectiveAmplitude) {
+        double impulse =
+                Math.max(0.0, effectiveAmplitude - effectProfile.impulseThreshold())
+                        * effectProfile.impulseScale();
+        double damage =
+                Math.max(0.0, effectiveAmplitude - effectProfile.damageThreshold())
+                        * effectProfile.damageScale();
 
         Vec3 center = entityBox.getCenter();
         Vec3 direction = center.subtract(origin);
@@ -93,18 +103,20 @@ public final class EntityWaveImpactService {
             double impulseZ = direction.z * impulse;
 
             if (entity instanceof LivingEntity living) {
-                double resistance = living.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
+                double resistance =
+                        living.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
                 impulseX *= (1.0 - resistance);
                 impulseY *= (1.0 - resistance);
                 impulseZ *= (1.0 - resistance);
             }
 
-            Vec3 knockback = EventHooks.getExplosionKnockback(
-                    level,
-                    emission.originalExplosion(),
-                    entity,
+            Vec3 knockback =
                     new Vec3(impulseX, impulseY, impulseZ)
-            );
+                            .scale(Math.signum(emission.sourceAmplitude()));
+            if (emission.originalExplosion() != null)
+                knockback =
+                        EventHooks.getExplosionKnockback(
+                                level, emission.originalExplosion(), entity, knockback);
             entity.push(knockback);
             entity.hurtMarked = true;
         }

@@ -1,8 +1,5 @@
 package com.secondition.creeperindustry.content.explosion.wave.network;
 
-import java.util.UUID;
-import java.util.function.Consumer;
-
 import com.secondition.creeperindustry.CreeperIndustry;
 import com.secondition.creeperindustry.content.explosion.wave.PulseWaveEmission;
 
@@ -12,50 +9,52 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 
+import java.util.UUID;
+import java.util.function.Consumer;
+
 public record PulseWaveSpawnPacket(
         UUID waveId,
         double originX,
         double originY,
         double originZ,
-        long emissionGameTime,
+        double emissionGameTime,
         double speedBlocksPerTick,
         double maxRadius,
         double amplitude,
-        double attenuationPerBlock
-) implements CustomPacketPayload {
-    public static final Type<PulseWaveSpawnPacket> TYPE = new Type<>(CreeperIndustry.asResource("pulse_wave_spawn"));
+        double attenuationPerBlock)
+        implements CustomPacketPayload {
+    public static final Type<PulseWaveSpawnPacket> TYPE =
+            new Type<>(CreeperIndustry.asResource("pulse_wave_spawn"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, PulseWaveSpawnPacket> STREAM_CODEC = StreamCodec.of(
-            (buf, packet) -> {
-                buf.writeUUID(packet.waveId());
-                buf.writeDouble(packet.originX());
-                buf.writeDouble(packet.originY());
-                buf.writeDouble(packet.originZ());
-                buf.writeVarLong(packet.emissionGameTime());
-                buf.writeDouble(packet.speedBlocksPerTick());
-                buf.writeDouble(packet.maxRadius());
-                buf.writeDouble(packet.amplitude());
-                buf.writeDouble(packet.attenuationPerBlock());
-            },
-            buf -> new PulseWaveSpawnPacket(
-                    buf.readUUID(),
-                    buf.readDouble(),
-                    buf.readDouble(),
-                    buf.readDouble(),
-                    buf.readVarLong(),
-                    buf.readDouble(),
-                    buf.readDouble(),
-                    buf.readDouble(),
-                    buf.readDouble()
-            )
-    );
+    public static final StreamCodec<RegistryFriendlyByteBuf, PulseWaveSpawnPacket> STREAM_CODEC =
+            StreamCodec.of(
+                    (buf, packet) -> {
+                        buf.writeUUID(packet.waveId());
+                        buf.writeDouble(packet.originX());
+                        buf.writeDouble(packet.originY());
+                        buf.writeDouble(packet.originZ());
+                        buf.writeDouble(packet.emissionGameTime());
+                        buf.writeDouble(packet.speedBlocksPerTick());
+                        buf.writeDouble(packet.maxRadius());
+                        buf.writeDouble(packet.amplitude());
+                        buf.writeDouble(packet.attenuationPerBlock());
+                    },
+                    buf ->
+                            new PulseWaveSpawnPacket(
+                                    buf.readUUID(),
+                                    buf.readDouble(),
+                                    buf.readDouble(),
+                                    buf.readDouble(),
+                                    buf.readDouble(),
+                                    buf.readDouble(),
+                                    buf.readDouble(),
+                                    buf.readDouble(),
+                                    buf.readDouble()));
 
-    private static Consumer<PulseWaveSpawnPacket> clientHandler = packet -> {
-    };
+    private static Consumer<PulseWaveSpawnPacket> clientHandler = packet -> {};
 
     public static void setClientHandler(Consumer<PulseWaveSpawnPacket> handler) {
-        clientHandler = handler != null ? handler : packet -> {
-        };
+        clientHandler = handler != null ? handler : packet -> {};
     }
 
     public static PulseWaveSpawnPacket fromEmission(PulseWaveEmission emission) {
@@ -69,8 +68,7 @@ public record PulseWaveSpawnPacket(
                 emission.profile().propagationSpeedBlocksPerTick(),
                 emission.maxEffectiveRadius(),
                 emission.sourceAmplitude(),
-                emission.profile().attenuationPerBlock()
-        );
+                emission.profile().attenuationPerBlock());
     }
 
     @Override

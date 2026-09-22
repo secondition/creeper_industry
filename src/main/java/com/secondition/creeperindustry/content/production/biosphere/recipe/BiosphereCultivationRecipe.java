@@ -1,8 +1,5 @@
 package com.secondition.creeperindustry.content.production.biosphere.recipe;
 
-import java.util.List;
-import java.util.Optional;
-
 import com.secondition.creeperindustry.CIRecipeSerializers;
 import com.secondition.creeperindustry.CIRecipeTypes;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereType;
@@ -16,25 +13,32 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
+import java.util.List;
+import java.util.Optional;
+
 public final class BiosphereCultivationRecipe implements Recipe<BiosphereRecipeInput> {
     private final BiosphereType biosphereType;
     private final Ingredient template;
     private final Optional<BiosphereCatalyst> catalyst;
     private final List<ItemStack> outputs;
     private final BiosphereSignalRequirement signalRequirement;
+    private final int processingUnits;
 
     public BiosphereCultivationRecipe(
             BiosphereType biosphereType,
             Ingredient template,
             Optional<BiosphereCatalyst> catalyst,
             List<ItemStack> outputs,
-            BiosphereSignalRequirement signalRequirement
-    ) {
+            BiosphereSignalRequirement signalRequirement,
+            int processingUnits) {
         this.biosphereType = biosphereType;
         this.template = template;
         this.catalyst = catalyst;
         this.outputs = outputs.stream().map(ItemStack::copy).toList();
         this.signalRequirement = signalRequirement;
+        if (processingUnits < 1 || processingUnits > 30000)
+            throw new IllegalArgumentException("Processing units outside range");
+        this.processingUnits = processingUnits;
     }
 
     @Override
@@ -42,7 +46,8 @@ public final class BiosphereCultivationRecipe implements Recipe<BiosphereRecipeI
         if (input.biosphereType() != biosphereType || !template.test(input.template())) {
             return false;
         }
-        return catalyst.map(value -> value.matches(input.catalyst())).orElseGet(input.catalyst()::isEmpty);
+        return catalyst.map(value -> value.matches(input.catalyst()))
+                .orElseGet(input.catalyst()::isEmpty);
     }
 
     @Override
@@ -97,6 +102,10 @@ public final class BiosphereCultivationRecipe implements Recipe<BiosphereRecipeI
 
     public List<ItemStack> outputs() {
         return outputs.stream().map(ItemStack::copy).toList();
+    }
+
+    public int processingUnits() {
+        return processingUnits;
     }
 
     public BiosphereSignalRequirement signalRequirement() {

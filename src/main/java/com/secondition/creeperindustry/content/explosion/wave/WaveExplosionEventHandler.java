@@ -1,7 +1,5 @@
 package com.secondition.creeperindustry.content.explosion.wave;
 
-import java.util.UUID;
-
 import com.secondition.creeperindustry.CreeperIndustry;
 import com.secondition.creeperindustry.content.explosion.wave.runtime.WaveRuntimeAccess;
 
@@ -15,10 +13,11 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.level.ExplosionEvent;
 
+import java.util.UUID;
+
 @EventBusSubscriber(modid = CreeperIndustry.MODID)
 public final class WaveExplosionEventHandler {
-    private WaveExplosionEventHandler() {
-    }
+    private WaveExplosionEventHandler() {}
 
     @SubscribeEvent
     public static void onExplosionDetonate(ExplosionEvent.Detonate event) {
@@ -39,17 +38,35 @@ public final class WaveExplosionEventHandler {
 
         event.getAffectedEntities().clear();
 
-        PulseWaveEmission emission = new PulseWaveEmission(
-                UUID.randomUUID(),
-                explosion.center(),
-                serverLevel.getGameTime(),
-                amplitude,
-                WavePropagationProfile.DEFAULT,
-                explosion.getDirectSourceEntity(),
-                explosion.getIndirectSourceEntity(),
-                explosion
-        );
+        PulseWaveEmission emission =
+                new PulseWaveEmission(
+                        UUID.randomUUID(),
+                        explosion.center(),
+                        serverLevel.getGameTime(),
+                        amplitude,
+                        WavePropagationProfile.DEFAULT,
+                        explosion.getDirectSourceEntity(),
+                        explosion.getIndirectSourceEntity(),
+                        explosion);
         WaveRuntimeAccess.get(serverLevel).spawnPulse(serverLevel, emission);
+        com.secondition.creeperindustry.content.energy.signal.runtime.SignalRuntimeAccess.get(
+                        serverLevel)
+                .emitPulse(
+                        serverLevel,
+                        new com.secondition.creeperindustry.content.energy.signal
+                                .CreativeSignalPulseSource(
+                                emission.id(),
+                                serverLevel.dimension(),
+                                emission.origin(),
+                                emission.emissionGameTime(),
+                                new com.secondition.creeperindustry.content.energy.signal
+                                        .SignalDefinition(
+                                        (int) amplitude,
+                                        1,
+                                        0,
+                                        com.secondition.creeperindustry.content.energy.signal
+                                                .SignalWaveform.SQUARE)),
+                        false);
     }
 
     private static boolean shouldHandle(Explosion explosion) {

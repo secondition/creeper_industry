@@ -1,13 +1,12 @@
 package com.secondition.creeperindustry;
 
-import com.secondition.creeperindustry.content.energy.signal.CreativeSignalSourceScreen;
-import com.secondition.creeperindustry.content.explosion.wave.client.ClientPulseWavePresentation;
+import com.secondition.creeperindustry.client.energy.signal.CreativeSignalSourceScreen;
+import com.secondition.creeperindustry.client.explosion.wave.ClientPulseWavePresentation;
+import com.secondition.creeperindustry.client.explosion.wave.PulseWaveRenderer;
+import com.secondition.creeperindustry.client.production.biosphere.BiosphereScreen;
 import com.secondition.creeperindustry.content.explosion.wave.network.PulseWaveSpawnPacket;
-import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartRenderer;
 import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerScreen;
-import com.secondition.creeperindustry.content.production.biosphere.BiosphereScreen;
-import com.secondition.creeperindustry.content.production.biosphere.BiosphereBlockEntityRenderer;
-import com.secondition.creeperindustry.content.production.biosphere.BiosphereHighlightRenderer;
+import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartRenderer;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -15,14 +14,23 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
-import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 
 @Mod(value = CreeperIndustry.MODID, dist = Dist.CLIENT)
-@EventBusSubscriber(modid = CreeperIndustry.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(
+        modid = CreeperIndustry.MODID,
+        value = Dist.CLIENT,
+        bus = EventBusSubscriber.Bus.MOD)
 public class CreeperIndustryClient {
     public CreeperIndustryClient() {
+        com.secondition.creeperindustry.content.explosion.wave.network.PeriodicWavePacket
+                .setClientHandler(ClientPulseWavePresentation::periodic);
         PulseWaveSpawnPacket.setClientHandler(ClientPulseWavePresentation::spawn);
-        NeoForge.EVENT_BUS.addListener(BiosphereHighlightRenderer::onRenderBlockHighlight);
+    }
+
+    @SubscribeEvent
+    static void onRegisterShaders(RegisterShadersEvent event) throws java.io.IOException {
+        PulseWaveRenderer.registerShader(event);
     }
 
     @SubscribeEvent
@@ -34,7 +42,8 @@ public class CreeperIndustryClient {
 
     @SubscribeEvent
     static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerBlockEntityRenderer(CIBlockEntityTypes.BIOSPHERE.get(), BiosphereBlockEntityRenderer::new);
-        event.registerEntityRenderer(CIEntityTypes.STORAGE_DISC_MINECART.get(), StorageDiscMinecartRenderer::new);
+
+        event.registerEntityRenderer(
+                CIEntityTypes.STORAGE_DISC_MINECART.get(), StorageDiscMinecartRenderer::new);
     }
 }

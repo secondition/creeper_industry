@@ -1,7 +1,5 @@
 package com.secondition.creeperindustry.content.production.biosphere;
 
-import java.util.Optional;
-
 import com.secondition.creeperindustry.CIBlockEntityTypes;
 import com.secondition.creeperindustry.content.energy.signal.AggregatedSignal;
 import com.secondition.creeperindustry.content.energy.signal.SignalReceiver;
@@ -9,15 +7,15 @@ import com.secondition.creeperindustry.content.energy.signal.runtime.SignalRunti
 import com.secondition.creeperindustry.content.production.biosphere.recipe.BiosphereCultivationRecipe;
 import com.secondition.creeperindustry.content.production.biosphere.recipe.BiosphereRecipeService;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.Container;
@@ -30,12 +28,14 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeHolder;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class BiosphereBlockEntity extends BlockEntity implements Container, MenuProvider, SignalReceiver, WorldlyContainer {
+import java.util.Optional;
+
+public class BiosphereBlockEntity extends BlockEntity
+        implements Container, MenuProvider, SignalReceiver, WorldlyContainer {
     public static final int TEMPLATE_SLOT = 0;
     public static final int CATALYST_SLOT = 1;
     public static final int OUTPUT_SLOT = 2;
@@ -45,24 +45,38 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
     private static final int[] OUTPUT_SLOTS = {OUTPUT_SLOT};
 
     private final NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, ItemStack.EMPTY);
-    private final ContainerData dataAccess = new ContainerData() {
-        @Override
-        public int get(int index) {
-            return 0;
-        }
+    private final ContainerData dataAccess =
+            new ContainerData() {
+                @Override
+                public int get(int index) {
+                    return switch (index) {
+                        case 0 -> processingProgress;
+                        case 1 -> requiredUnits;
+                        case 2 -> structureSize;
+                        default -> 0;
+                    };
+                }
 
-        @Override
-        public void set(int index, int value) {
-        }
+                @Override
+                public void set(int index, int value) {
+                    switch (index) {
+                        case 0 -> processingProgress = value;
+                        case 1 -> requiredUnits = value;
+                        case 2 -> structureSize = value;
+                    }
+                }
 
-        @Override
-        public int getCount() {
-            return 0;
-        }
-    };
+                @Override
+                public int getCount() {
+                    return 3;
+                }
+            };
 
+    private int processingProgress, requiredUnits = 20, structureSize;
+    private String processingRecipe = "";
+    private ItemStack cachedTemplate = ItemStack.EMPTY;
+    private RecipeHolder<BiosphereCultivationRecipe> cachedRecipe;
     private boolean signalActive;
-    private long lastProductionGameTime = Long.MIN_VALUE;
     private int selectedOutputIndex;
 
     public BiosphereBlockEntity(BlockPos pos, BlockState blockState) {
@@ -86,7 +100,8 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         if (controller != this) {
             return controller.getSelectedOutputPreview();
         }
-        return controller.findTemplateRecipe()
+        return controller
+                .findTemplateRecipe()
                 .map(holder -> holder.value().selectedOutput(selectedOutputIndex))
                 .orElse(ItemStack.EMPTY);
     }
@@ -103,7 +118,8 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
     }
 
     @Override
-    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+    public AbstractContainerMenu createMenu(
+            int containerId, Inventory playerInventory, Player player) {
         BiosphereBlockEntity controller = getControllerEntity();
         if (controller != null && controller != this) {
             return controller.createMenu(containerId, playerInventory, player);
@@ -216,8 +232,10 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
             return false;
         }
         return switch (slot) {
-            case TEMPLATE_SLOT -> BiosphereRecipeService.isValidTemplate(level, getBiosphereType(), stack);
-            case CATALYST_SLOT -> BiosphereRecipeService.isValidCatalyst(level, getBiosphereType(), stack);
+            case TEMPLATE_SLOT ->
+                    BiosphereRecipeService.isValidTemplate(level, getBiosphereType(), stack);
+            case CATALYST_SLOT ->
+                    BiosphereRecipeService.isValidCatalyst(level, getBiosphereType(), stack);
             default -> false;
         };
     }
@@ -241,11 +259,14 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
     protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         signalActive = false;
+        processingProgress = Math.clamp(tag.getInt("processing_progress"), 0, 29999);
+        processingRecipe = tag.getString("processing_recipe");
         if (isControllerPart()) {
             ContainerHelper.loadAllItems(tag, items, registries);
-            selectedOutputIndex = tag.contains("SelectedOutput")
-                    ? Math.max(tag.getInt("SelectedOutput"), 0)
-                    : Math.max(tag.getInt("SelectedMonsterOutput"), 0);
+            selectedOutputIndex =
+                    tag.contains("SelectedOutput")
+                            ? Math.max(tag.getInt("SelectedOutput"), 0)
+                            : Math.max(tag.getInt("SelectedMonsterOutput"), 0);
         } else {
             selectedOutputIndex = 0;
         }
@@ -257,24 +278,31 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         if (isControllerPart()) {
             ContainerHelper.saveAllItems(tag, items, registries);
             tag.putInt("SelectedOutput", selectedOutputIndex);
+            tag.putInt("processing_progress", processingProgress);
+            tag.putString("processing_recipe", processingRecipe);
         }
     }
 
     @Override
     public CompoundTag getUpdateTag(HolderLookup.Provider registries) {
-        return isControllerPart() ? saveWithoutMetadata(registries) : super.getUpdateTag(registries);
+        return isControllerPart()
+                ? saveWithoutMetadata(registries)
+                : super.getUpdateTag(registries);
     }
 
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return isControllerPart() ? ClientboundBlockEntityDataPacket.create(this) : super.getUpdatePacket();
+        return isControllerPart()
+                ? ClientboundBlockEntityDataPacket.create(this)
+                : super.getUpdatePacket();
     }
 
     @Override
     public void setChanged() {
         super.setChanged();
         if (level != null && !level.isClientSide()) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+            level.sendBlockUpdated(
+                    worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
     }
 
@@ -299,25 +327,61 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         super.onChunkUnloaded();
     }
 
+    public void setStructureSize(int size) {
+        if (structureSize != size) {
+            structureSize = size;
+            setChanged();
+        }
+    }
+
+    public int getStructureSize() {
+        return structureSize;
+    }
+
     @Override
     public void receiveSignal(AggregatedSignal signal) {
-        BiosphereBlockEntity controller = getInventoryController();
-        boolean strongSignal = level != null
-                && BiosphereRecipeService.hasMatchingSignal(
-                        level,
-                        controller.getBiosphereType(),
-                        controller.items.get(TEMPLATE_SLOT),
-                        signal
-                );
-        if (strongSignal && !signalActive) {
-            signalActive = true;
-            tryTriggerProduction();
+        if (level == null || level.isClientSide() || !isControllerPart() || structureSize == 0)
             return;
+        Optional<RecipeHolder<BiosphereCultivationRecipe>> found = findTemplateRecipe();
+        if (found.isEmpty()) return;
+        BiosphereCultivationRecipe recipe = found.get().value();
+        String identity = found.get().id() + ":" + selectedOutputIndex;
+        if (!identity.equals(processingRecipe)) {
+            processingProgress = 0;
+            processingRecipe = identity;
         }
-
-        if (!strongSignal) {
-            signalActive = false;
-        }
+        requiredUnits =
+                Math.max(
+                        1,
+                        recipe.processingUnits()
+                                / (structureSize == 7 ? 4 : structureSize == 5 ? 2 : 1));
+        processingProgress = Math.min(processingProgress, requiredUnits - 1);
+        int earned = signal.processingUnits(recipe.signalRequirement().minimumAmplitude());
+        ItemStack result = recipe.selectedOutput(selectedOutputIndex);
+        if (earned <= 0 || !canProcessSignalTrigger(recipe, result)) return;
+        ItemStack output = items.get(OUTPUT_SLOT);
+        int capacity =
+                (output.isEmpty()
+                                ? result.getMaxStackSize()
+                                : output.getMaxStackSize() - output.getCount())
+                        / result.getCount();
+        if (recipe.catalyst().isPresent())
+            capacity =
+                    Math.min(
+                            capacity,
+                            items.get(CATALYST_SLOT).getCount() / recipe.catalyst().get().count());
+        long total = (long) processingProgress + earned;
+        int completed = (int) Math.min(capacity, total / requiredUnits);
+        processingProgress =
+                (int) Math.min(requiredUnits - 1, total - (long) completed * requiredUnits);
+        if (completed > 0) {
+            final int count = completed;
+            recipe.catalyst().ifPresent(c -> items.get(CATALYST_SLOT).shrink(c.count() * count));
+            if (output.isEmpty())
+                items.set(OUTPUT_SLOT, result.copyWithCount(result.getCount() * completed));
+            else output.grow(result.getCount() * completed);
+            setChanged();
+        } else super.setChanged(); // Save progress without a block update packet each tick.
     }
 
     @Override
@@ -347,7 +411,8 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         if (result.isEmpty()) {
             return false;
         }
-        if (recipe.catalyst().isPresent() && !recipe.catalyst().get().matches(items.get(CATALYST_SLOT))) {
+        if (recipe.catalyst().isPresent()
+                && !recipe.catalyst().get().matches(items.get(CATALYST_SLOT))) {
             return false;
         }
 
@@ -359,48 +424,6 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
             return false;
         }
         return output.getCount() + result.getCount() <= output.getMaxStackSize();
-    }
-
-    private void tryTriggerProduction() {
-        BiosphereBlockEntity controller = getInventoryController();
-        if (controller != this) {
-            controller.tryTriggerProduction();
-            return;
-        }
-
-        Optional<RecipeHolder<BiosphereCultivationRecipe>> recipeHolder = findCurrentRecipe();
-        if (recipeHolder.isEmpty()) {
-            return;
-        }
-        BiosphereCultivationRecipe recipe = recipeHolder.get().value();
-        ItemStack result = recipe.selectedOutput(selectedOutputIndex);
-        if (!canProcessSignalTrigger(recipe, result)) {
-            return;
-        }
-
-        ItemStack output = items.get(OUTPUT_SLOT);
-        if (level != null && lastProductionGameTime == level.getGameTime()) {
-            return;
-        }
-
-        recipe.catalyst().ifPresent(catalyst -> {
-            ItemStack catalystStack = items.get(CATALYST_SLOT);
-            catalystStack.shrink(catalyst.count());
-            if (catalystStack.isEmpty()) {
-                items.set(CATALYST_SLOT, ItemStack.EMPTY);
-            }
-        });
-
-        if (output.isEmpty()) {
-            items.set(OUTPUT_SLOT, result.copy());
-        } else {
-            output.grow(result.getCount());
-        }
-
-        if (level != null) {
-            lastProductionGameTime = level.getGameTime();
-        }
-        setChanged();
     }
 
     private boolean isControllerPart() {
@@ -429,14 +452,15 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
         if (level == null || level.isClientSide()) {
             return;
         }
-        SignalRuntimeAccess.get(level).registerReceiver(worldPosition);
+        if (isControllerPart()) SignalRuntimeAccess.get(level).structures().register(worldPosition);
     }
 
     private void unregisterReceiver() {
         if (level == null || level.isClientSide()) {
             return;
         }
-        SignalRuntimeAccess.getExisting(level).ifPresent(runtime -> runtime.unregisterReceiver(worldPosition));
+        SignalRuntimeAccess.getExisting(level)
+                .ifPresent(runtime -> runtime.structures().unregister(level, worldPosition));
     }
 
     public boolean cycleOutputSelection(Player player) {
@@ -451,22 +475,31 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
 
         Optional<RecipeHolder<BiosphereCultivationRecipe>> recipe = findTemplateRecipe();
         if (recipe.isEmpty() || recipe.get().value().outputs().isEmpty()) {
-            player.displayClientMessage(Component.translatable(
-                    "message.creeper_industry.biosphere.no_output"
-            ).withStyle(ChatFormatting.RED), false);
+            player.displayClientMessage(
+                    Component.translatable("message.creeper_industry.biosphere.no_output")
+                            .withStyle(ChatFormatting.RED),
+                    false);
             return true;
         }
 
-        selectedOutputIndex = Math.floorMod(selectedOutputIndex + 1, recipe.get().value().outputs().size());
+        selectedOutputIndex =
+                Math.floorMod(selectedOutputIndex + 1, recipe.get().value().outputs().size());
+        processingProgress = 0;
         setChanged();
-        player.displayClientMessage(Component.translatable(
-                "message.creeper_industry.biosphere.selected_output",
-                recipe.get().value().selectedOutput(selectedOutputIndex).getHoverName()
-        ).withStyle(ChatFormatting.AQUA), false);
+        player.displayClientMessage(
+                Component.translatable(
+                                "message.creeper_industry.biosphere.selected_output",
+                                recipe.get()
+                                        .value()
+                                        .selectedOutput(selectedOutputIndex)
+                                        .getHoverName())
+                        .withStyle(ChatFormatting.AQUA),
+                false);
         return true;
     }
 
     private void normalizeSelectionAfterInventoryChange(int slot) {
+        if (slot == TEMPLATE_SLOT) processingProgress = 0;
         if (slot == TEMPLATE_SLOT || slot == CATALYST_SLOT) {
             normalizeOutputSelection();
         }
@@ -484,7 +517,8 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
             return;
         }
 
-        selectedOutputIndex = Math.floorMod(selectedOutputIndex, recipe.get().value().outputs().size());
+        selectedOutputIndex =
+                Math.floorMod(selectedOutputIndex, recipe.get().value().outputs().size());
     }
 
     private Optional<RecipeHolder<BiosphereCultivationRecipe>> findCurrentRecipe() {
@@ -492,21 +526,21 @@ public class BiosphereBlockEntity extends BlockEntity implements Container, Menu
             return Optional.empty();
         }
         return BiosphereRecipeService.findRecipe(
-                level,
-                getBiosphereType(),
-                items.get(TEMPLATE_SLOT),
-                items.get(CATALYST_SLOT)
-        );
+                level, getBiosphereType(), items.get(TEMPLATE_SLOT), items.get(CATALYST_SLOT));
     }
 
     private Optional<RecipeHolder<BiosphereCultivationRecipe>> findTemplateRecipe() {
-        if (level == null) {
-            return Optional.empty();
-        }
-        return BiosphereRecipeService.findRecipeForTemplate(
-                level,
-                getBiosphereType(),
-                items.get(TEMPLATE_SLOT)
-        );
+        if (level == null || items.get(TEMPLATE_SLOT).isEmpty()) return Optional.empty();
+        ItemStack template = items.get(TEMPLATE_SLOT);
+        if (cachedRecipe != null
+                && ItemStack.isSameItemSameComponents(template, cachedTemplate)
+                && level.getRecipeManager().byKey(cachedRecipe.id()).orElse(null) == cachedRecipe)
+            return Optional.of(cachedRecipe);
+        Optional<RecipeHolder<BiosphereCultivationRecipe>> found =
+                BiosphereRecipeService.findRecipeForTemplate(level, getBiosphereType(), template);
+        if (cachedRecipe != null && cachedRecipe != found.orElse(null)) processingProgress = 0;
+        cachedRecipe = found.orElse(null);
+        cachedTemplate = template.copy();
+        return found;
     }
 }

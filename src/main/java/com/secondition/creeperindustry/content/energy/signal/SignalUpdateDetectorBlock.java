@@ -21,7 +21,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
 public class SignalUpdateDetectorBlock extends SimpleEntityBlock implements EntityBlock {
-    public static final MapCodec<SignalUpdateDetectorBlock> CODEC = simpleCodec(SignalUpdateDetectorBlock::new);
+    public static final MapCodec<SignalUpdateDetectorBlock> CODEC =
+            simpleCodec(SignalUpdateDetectorBlock::new);
     public static final BooleanProperty TRIGGERED = BlockStateProperties.POWERED;
 
     public SignalUpdateDetectorBlock(BlockBehaviour.Properties properties) {
@@ -45,7 +46,8 @@ public class SignalUpdateDetectorBlock extends SimpleEntityBlock implements Enti
     }
 
     @Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+    protected InteractionResult useWithoutItem(
+            BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
@@ -53,18 +55,26 @@ public class SignalUpdateDetectorBlock extends SimpleEntityBlock implements Enti
         refreshForDebugRead(level, pos);
 
         if (level.getBlockEntity(pos) instanceof SignalUpdateDetectorBlockEntity detector) {
-            player.displayClientMessage(Component.translatable(
-                    "message.creeper_industry.signal_update_detector.reading",
-                    detector.getCurrentAmplitude(),
-                    detector.getCurrentInstantaneousValue(),
-                    detector.getLastNonZeroAmplitude()
-            ).withStyle(ChatFormatting.YELLOW), false);
+            player.displayClientMessage(
+                    Component.translatable(
+                                    "message.creeper_industry.signal_update_detector.reading",
+                                    detector.getCurrentAmplitude(),
+                                    detector.getCurrentInstantaneousValue(),
+                                    detector.getLastNonZeroAmplitude())
+                            .withStyle(ChatFormatting.YELLOW),
+                    false);
+            if (detector.pendingDelay() >= 0)
+                player.displayClientMessage(
+                        Component.translatable(
+                                "message.creeper_industry.signal_update_detector.pending",
+                                detector.pendingDelay()),
+                        false);
         }
 
         return InteractionResult.CONSUME;
     }
 
     private void refreshForDebugRead(Level level, BlockPos pos) {
-        SignalRuntimeAccess.get(level).refreshService().refreshTarget(level, pos);
+        SignalRuntimeAccess.get(level).refreshReceiver(level, pos);
     }
 }
