@@ -59,12 +59,15 @@ public final class MachineWaveField {
     }
 
     private void send(ServerLevel level, Version version) {
-        for (ServerPlayer player : level.players())
-            if (player.position().distanceTo(version.source.position())
-                    < Math.abs(version.source.signal().amplitude()) + 128) {
+        for (ServerPlayer player : level.players()) {
+            Set<String> known = seen.computeIfAbsent(player.getUUID(), k -> new HashSet<>());
+            if (known.contains(key(version))
+                    || player.position().distanceTo(version.source.position())
+                            < Math.abs(version.source.signal().amplitude()) + 128) {
                 PacketDistributor.sendToPlayer(player, version.packet());
-                seen.computeIfAbsent(player.getUUID(), k -> new HashSet<>()).add(key(version));
+                known.add(key(version));
             }
+        }
     }
 
     public void tick(ServerLevel level) {
@@ -87,8 +90,8 @@ public final class MachineWaveField {
                     boolean nearby =
                             player.position().distanceTo(version.source.position())
                                     < Math.abs(version.source.signal().amplitude()) + 128;
-                    if (!nearby) known.remove(key(version));
-                    else if (known.add(key(version)) || time % 100 == 0)
+                    // Subscriptions last until the version ends, including while the player is far away.
+                    if (nearby && (known.add(key(version)) || time % 100 == 0))
                         PacketDistributor.sendToPlayer(player, version.packet());
                 }
             }
