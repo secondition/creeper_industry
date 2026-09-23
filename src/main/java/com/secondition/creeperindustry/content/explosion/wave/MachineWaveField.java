@@ -33,12 +33,12 @@ public final class MachineWaveField {
                     p.z,
                     s.amplitude(),
                     s.periodUnits(),
+                    s.stages(),
                     s.phaseUnits());
         }
     }
 
     private final List<Version> versions = new ArrayList<>();
-    private Map<UUID, Long> previous = new HashMap<>();
     private final Map<UUID, Set<String>> seen = new HashMap<>();
 
     public void change(ServerLevel level, UUID id, ContinuousSignalSource next) {
@@ -97,12 +97,12 @@ public final class MachineWaveField {
             }
             seen.keySet().retainAll(players);
         }
-        Map<Entity, Double> sums = new HashMap<>();
         Map<Entity, Vec3> forces = new HashMap<>();
         for (Version version : versions) {
             var source = version.source;
             var signal = source.signal();
-            if (signal.periodTicks() <= 1) continue;
+            if (signal.periodUnits() > 0 && signal.periodUnits() <= SignalTime.UNITS_PER_TICK)
+                continue;
             double radius = Math.abs(signal.amplitude());
             Vec3 origin = source.position();
             for (Entity entity :
@@ -115,48 +115,36 @@ public final class MachineWaveField {
                 double magnitude = Math.max(0, radius - distance);
                 if (magnitude <= 0) continue;
                 long sourceTime =
-                        time * 20
+                        time * SignalTime.UNITS_PER_TICK
                                 - SignalTime.travelUnits(
                                         distance,
                                         WavePropagationProfile.DEFAULT
                                                 .propagationSpeedBlocksPerTick());
-                if (sourceTime < source.gameTime() * 20
-                        || (version.end != Long.MAX_VALUE && sourceTime >= version.end * 20))
+                if (sourceTime < source.gameTime() * SignalTime.UNITS_PER_TICK
+                        || (version.end != Long.MAX_VALUE
+                                && sourceTime >= version.end * SignalTime.UNITS_PER_TICK))
                     continue;
-                double value =
-                        (Math.floorMod(sourceTime + signal.phaseUnits(), signal.periodUnits())
-                                                < signal.periodUnits() / 2
-                                        ? 1
-                                        : -1)
-                                * Math.signum(signal.amplitude())
-                                * magnitude;
-                sums.merge(entity, value, Double::sum);
+                double value = signal.sample(
+                                Math.round(Math.signum(signal.amplitude())
+                                        * magnitude * SignalTime.AMPLITUDE_SCALE), sourceTime)
+                        / (double) SignalTime.AMPLITUDE_SCALE;
                 Vec3 direction = point.subtract(origin).normalize();
                 forces.merge(entity, direction.scale(value), Vec3::add);
             }
         }
-        Map<UUID, Long> current = new HashMap<>();
-        for (var entry : sums.entrySet()) {
+        for (var entry : forces.entrySet()) {
             Entity entity = entry.getKey();
-            long value = Math.round(entry.getValue() * 1000);
-            current.put(entity.getUUID(), value);
-            if (value == 0 || previous.getOrDefault(entity.getUUID(), 0L) == value) continue;
-            double resistance =
-                    entity instanceof LivingEntity living
-                            ? living.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE)
-                            : 0;
-            Vec3 force = forces.get(entity).scale(0.08 * (1 - resistance));
+            double resistance = entity instanceof LivingEntity living
+                    ? living.getAttributeValue(Attributes.EXPLOSION_KNOCKBACK_RESISTANCE) : 0;
+            Vec3 force = entry.getValue().scale(0.08 * (1 - resistance));
+            if (force.lengthSqr() == 0) continue;
             entity.push(force);
             entity.hurtMarked = true;
-            double damage = Math.max(0, Math.abs(value) / 1000.0 - 2) * 0.5;
-            if (damage > 0) entity.hurt(level.damageSources().generic(), (float) damage);
         }
-        previous = current;
     }
 
     public void clear() {
         versions.clear();
-        previous.clear();
         seen.clear();
     }
 }

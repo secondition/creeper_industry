@@ -62,10 +62,11 @@ public final class WaveExplosionEventHandler {
                                 new com.secondition.creeperindustry.content.energy.signal
                                         .SignalDefinition(
                                         (int) amplitude,
-                                        1,
+                                        0,
+                                        0,
                                         0,
                                         com.secondition.creeperindustry.content.energy.signal
-                                                .SignalWaveform.SQUARE)),
+                                                .SignalWaveform.STATIC)),
                         false);
     }
 

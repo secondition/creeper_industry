@@ -19,6 +19,7 @@ public record PeriodicWavePacket(
         double z,
         int amplitude,
         int period,
+        int stages,
         int phase)
         implements CustomPacketPayload {
     public static final Type<PeriodicWavePacket> TYPE =
@@ -34,6 +35,7 @@ public record PeriodicWavePacket(
                         b.writeDouble(p.z);
                         b.writeInt(p.amplitude);
                         b.writeInt(p.period);
+                        b.writeInt(p.stages);
                         b.writeInt(p.phase);
                     },
                     b ->
@@ -44,6 +46,7 @@ public record PeriodicWavePacket(
                                     b.readDouble(),
                                     b.readDouble(),
                                     b.readDouble(),
+                                    b.readInt(),
                                     b.readInt(),
                                     b.readInt(),
                                     b.readInt()));

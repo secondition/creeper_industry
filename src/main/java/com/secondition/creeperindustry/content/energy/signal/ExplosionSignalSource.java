@@ -20,9 +20,6 @@ public record ExplosionSignalSource(
         float explosionPower,
         ResourceLocation sourceId
 ) implements SignalSource {
-    public static final int PULSE_PERIOD_TICKS = 1;
-    public static final int DEFAULT_PHASE_TICKS = 0;
-
     public ExplosionSignalSource {
         if (id == null) {
             throw new IllegalArgumentException("Signal source id cannot be null");
@@ -35,7 +32,7 @@ public record ExplosionSignalSource(
             return Optional.empty();
         }
 
-        SignalDefinition signal = new SignalDefinition(amplitude.getAsInt(), PULSE_PERIOD_TICKS, DEFAULT_PHASE_TICKS, SignalWaveform.SQUARE);
+        SignalDefinition signal = new SignalDefinition(amplitude.getAsInt(), 0, 0, 0, SignalWaveform.STATIC);
         return Optional.of(new ExplosionSignalSource(
                 UUID.randomUUID(),
                 context.level(),

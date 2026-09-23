@@ -87,7 +87,7 @@ public final class SignalRuntime implements AutoCloseable {
     private long sequence;
     private long lastTick = Long.MIN_VALUE;
     private static final long HISTORY_UNITS =
-            250000; // > maximum bounded duct route + source radius
+            1000000; // > maximum bounded duct route + source radius
 
     private record SourceChange(long time, SignalSource before, SignalSource after) {}
 
@@ -146,7 +146,7 @@ public final class SignalRuntime implements AutoCloseable {
         SignalSource before = sources.get(source.id()).orElse(null);
         sources.put(source);
         machineField.change((ServerLevel) level, source.id(), source);
-        SourceChange change = new SourceChange(level.getGameTime() * 20, before, source);
+        SourceChange change = new SourceChange(level.getGameTime() * SignalTime.UNITS_PER_TICK, before, source);
         history.computeIfAbsent(source.id(), k -> new ArrayList<>()).add(change);
         scheduleChange(level, change, affectedTargets(level, change));
     }
@@ -157,14 +157,14 @@ public final class SignalRuntime implements AutoCloseable {
                         before -> {
                             machineField.change((ServerLevel) level, id, null);
                             SourceChange change =
-                                    new SourceChange(level.getGameTime() * 20, before, null);
+                                    new SourceChange(level.getGameTime() * SignalTime.UNITS_PER_TICK, before, null);
                             history.computeIfAbsent(id, k -> new ArrayList<>()).add(change);
                             scheduleChange(level, change, affectedTargets(level, change));
                         });
     }
 
     public void emitPulse(Level level, SignalSource source, boolean present) {
-        SourceChange change = new SourceChange(source.gameTime() * 20, null, source);
+        SourceChange change = new SourceChange(source.gameTime() * SignalTime.UNITS_PER_TICK, null, source);
         history.computeIfAbsent(source.id(), k -> new ArrayList<>()).add(change);
         scheduleChange(level, change, affectedTargets(level, change));
         if (present && level instanceof ServerLevel server) {
@@ -241,11 +241,10 @@ public final class SignalRuntime implements AutoCloseable {
                 PathKey key = new PathKey(source.id(), route.id());
                 int cost = (int) Math.ceil(route.attenuationDistance());
                 if (source instanceof ContinuousSignalSource) {
-                    int period = source.signal().periodUnits();
-                    int phase =
-                            (int)
-                                    Math.floorMod(
-                                            source.signal().phaseUnits() - delay(route), period);
+                    SignalDefinition signal = source.signal();
+                    int period = signal.periodUnits();
+                    int phase = period == 0 ? 0 :
+                            (int) Math.floorMod(signal.phaseUnits() - delay(route), period);
                     queue(
                             level,
                             at,
@@ -253,22 +252,22 @@ public final class SignalRuntime implements AutoCloseable {
                             state,
                             key,
                             new Contribution(
-                                    new CompositeWaveform.Term(amplitude, period, phase),
+                                    new CompositeWaveform.Term(amplitude, period, signal.stages(), phase, false),
                                     cost,
                                     delay(route)));
                 } else {
                     for (int step = 0; step < 3; step++)
                         queue(
                                 level,
-                                at + step * 20,
+                                at + step * SignalTime.UNITS_PER_TICK,
                                 target,
                                 state,
                                 key,
                                 new Contribution(
-                                        new CompositeWaveform.Term(amplitude / (1L << step), 0, 0),
+                                        new CompositeWaveform.Term(amplitude / (1L << step), 0, 0, 0, true),
                                         cost,
                                         delay(route)));
-                    queue(level, at + 60, target, state, key, null);
+                    queue(level, at + 3L * SignalTime.UNITS_PER_TICK, target, state, key, null);
                 }
             }
         }
@@ -296,7 +295,7 @@ public final class SignalRuntime implements AutoCloseable {
     }
 
     public void tick(ServerLevel level) {
-        long now = level.getGameTime() * 20;
+        long now = level.getGameTime() * SignalTime.UNITS_PER_TICK;
         if (lastTick == now) return;
         lastTick = now;
         indexLoadedChunks(level);
@@ -396,7 +395,7 @@ public final class SignalRuntime implements AutoCloseable {
                                     state.contributions.size(),
                                     0,
                                     true,
-                                    state.wave.periodUnits() / 20.0,
+                                    state.wave.periodUnits() / (double) SignalTime.UNITS_PER_TICK,
                                     completed.getValue(),
                                     value != state.previous));
                 if (state.cycles.isEmpty())
@@ -410,7 +409,7 @@ public final class SignalRuntime implements AutoCloseable {
                                     state.contributions.size(),
                                     0,
                                     true,
-                                    state.wave.periodUnits() / 20.0,
+                                    state.wave.periodUnits() / (double) SignalTime.UNITS_PER_TICK,
                                     0,
                                     value != state.previous));
             } else if (!state.contributions.isEmpty() || value != state.previous) {

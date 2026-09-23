@@ -12,11 +12,17 @@ import java.util.UUID;
 final class ClientPulseWave {
     private final PulseWaveSpawnPacket emission;
     private final Vec3 origin;
+    private final double level;
     private boolean hitLocalPlayer;
 
     ClientPulseWave(PulseWaveSpawnPacket emission) {
+        this(emission, 1);
+    }
+
+    ClientPulseWave(PulseWaveSpawnPacket emission, double level) {
         this.emission = emission;
         this.origin = new Vec3(emission.originX(), emission.originY(), emission.originZ());
+        this.level = level;
     }
 
     static boolean isValid(PulseWaveSpawnPacket packet) {
@@ -35,7 +41,7 @@ final class ClientPulseWave {
     }
 
     float polarity() {
-        return (float) Math.signum(emission.amplitude());
+        return (float) Math.signum(emission.amplitude() * level);
     }
 
     UUID id() {
@@ -71,16 +77,14 @@ final class ClientPulseWave {
                 && gameTime <= Math.ceil(arrivalTime(maxRadius()));
     }
 
+    double amplitudeAt(double distance) {
+        return WavePropagationMath.effectiveAmplitude(
+                Math.abs(emission.amplitude()), distance, emission.attenuationPerBlock())
+                * Math.abs(level);
+    }
+
     float strengthAt(double distance) {
-        return (float)
-                Mth.clamp(
-                        WavePropagationMath.effectiveAmplitude(
-                                        Math.abs(emission.amplitude()),
-                                        distance,
-                                        emission.attenuationPerBlock())
-                                / Math.abs(emission.amplitude()),
-                        0.0,
-                        1.0);
+        return (float) Mth.clamp(amplitudeAt(distance) / Math.abs(emission.amplitude()), 0.0, 1.0);
     }
 
     float shellWidth(double radius) {

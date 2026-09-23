@@ -84,8 +84,8 @@ public final class EntityWaveImpactService {
         double impulse =
                 Math.max(0.0, effectiveAmplitude - effectProfile.impulseThreshold())
                         * effectProfile.impulseScale();
-        double damage =
-                Math.max(0.0, effectiveAmplitude - effectProfile.damageThreshold())
+        double damage = emission.originalExplosion() == null ? 0.0
+                : Math.max(0.0, effectiveAmplitude - effectProfile.damageThreshold())
                         * effectProfile.damageScale();
 
         Vec3 center = entityBox.getCenter();

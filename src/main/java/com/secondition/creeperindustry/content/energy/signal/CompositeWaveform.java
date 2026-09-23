@@ -4,19 +4,28 @@ import java.util.*;
 
 /** Pure fixed point compiler. Slow combinations never expand their common period. */
 public final class CompositeWaveform {
-    public record Term(long amplitude, int period, int phase) {
+    public record Term(long amplitude, int period, int stages, int phase, boolean transientSignal) {
         public Term {
-            if (period < 0
-                    || period > 2000
-                    || period % 2 != 0
-                    || (period > 0 && (phase < 0 || phase >= period)))
+            if (period == 0) {
+                if (stages != 0 || phase != 0)
+                    throw new IllegalArgumentException("Wave term");
+            } else if (period < 0
+                    || period > SignalTime.MAX_PERIOD_UNITS
+                    || stages < 2
+                    || stages > 16
+                    || stages % 2 != 0
+                    || !SignalTime.isStageUnits(period / stages)
+                    || period % stages != 0
+                    || phase < 0
+                    || phase >= period
+                    || transientSignal) {
                 throw new IllegalArgumentException("Wave term");
+            }
         }
 
         public long sample(long time) {
-            return period == 0 || Math.floorMod(time + phase, period) < period / 2
-                    ? amplitude
-                    : -amplitude;
+            return period == 0 ? amplitude
+                    : SignalWaveform.TRIANGLE.sample(amplitude, stages, period / stages, phase, time);
         }
     }
 
@@ -30,25 +39,27 @@ public final class CompositeWaveform {
     private final long[] slowWindow = new long[32];
 
     public CompositeWaveform(Collection<Term> input) {
-        fast = !input.isEmpty() && input.stream().allMatch(t -> t.period() > 0 && t.period() <= 20);
-        periodic = input.stream().allMatch(t -> t.period() > 0);
+        boolean fastInput = input.stream().anyMatch(t -> t.period() > 0)
+                && input.stream().allMatch(t -> !t.transientSignal() && t.period() <= SignalTime.UNITS_PER_TICK);
+        periodic = input.stream().noneMatch(Term::transientSignal);
         // Classification precedes cancellation: optimization cannot upgrade mixed inputs.
-        record Key(int period, int phase) {}
+        record Key(int period, int stages, int phase, boolean transientSignal) {}
         Map<Key, Long> groups = new HashMap<>();
         for (Term term : input) {
             // Opposite half-cycle phases are the same basis with an inverted amplitude.
             boolean inverted = term.period() > 0 && term.phase() >= term.period() / 2;
             int phase = inverted ? term.phase() - term.period() / 2 : term.phase();
             groups.merge(
-                    new Key(term.period(), phase),
+                    new Key(term.period(), term.stages(), phase, term.transientSignal()),
                     inverted ? -term.amplitude() : term.amplitude(),
                     Math::addExact);
         }
-        terms =
-                groups.entrySet().stream()
-                        .filter(e -> e.getValue() != 0)
-                        .map(e -> new Term(e.getValue(), e.getKey().period(), e.getKey().phase()))
-                        .toList();
+        terms = groups.entrySet().stream()
+                .filter(e -> e.getValue() != 0)
+                .map(e -> new Term(e.getValue(), e.getKey().period(), e.getKey().stages(),
+                        e.getKey().phase(), e.getKey().transientSignal()))
+                .toList();
+        fast = fastInput && terms.stream().anyMatch(t -> t.period() > 0);
         if (!fast) {
             fastSamples = null;
             period = 0;
@@ -56,8 +67,9 @@ public final class CompositeWaveform {
             return;
         }
         int common = 1;
-        for (Term term : terms) common = common / gcd(common, term.period()) * term.period();
-        if (common > 5040) throw new IllegalStateException("Fast period exceeds finite tier bound");
+        for (Term term : terms)
+            if (term.period() > 0) common = common / gcd(common, term.period()) * term.period();
+        if (common > 8400) throw new IllegalStateException("Fast period exceeds finite tier bound");
         long[] values = new long[common];
         for (Term term : terms) for (int i = 0; i < common; i++) values[i] += term.sample(i);
         int[] prefix = new int[common];
@@ -98,13 +110,14 @@ public final class CompositeWaveform {
 
     public long valueAt(long units) {
         if (fast) return fastSamples[(int) Math.floorMod(units, period)];
-        if (!periodic || Math.floorMod(units, 20) != 0) return direct(units);
-        long tick = Math.floorDiv(units, 20);
+        if (!periodic || Math.floorMod(units, SignalTime.UNITS_PER_TICK) != 0) return direct(units);
+        long tick = Math.floorDiv(units, SignalTime.UNITS_PER_TICK);
         if (windowStart == Long.MIN_VALUE
                 || tick < windowStart
                 || tick >= windowStart + slowWindow.length) {
             windowStart = tick;
-            for (int i = 0; i < slowWindow.length; i++) slowWindow[i] = direct((tick + i) * 20);
+            for (int i = 0; i < slowWindow.length; i++)
+                slowWindow[i] = direct((tick + i) * SignalTime.UNITS_PER_TICK);
         }
         return slowWindow[(int) (tick - windowStart)];
     }

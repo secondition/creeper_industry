@@ -1,30 +1,26 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
 public final class SignalTime {
-    public static final int UNITS_PER_TICK = 20;
+    public static final int UNITS_PER_TICK = 80;
     public static final int AMPLITUDE_SCALE = 1000;
-    public static final int PERIOD_COUNT = 60;
+    public static final int STAGE_LENGTH_COUNT = 14;
+    public static final int MAX_PERIOD_UNITS = 16 * 10 * UNITS_PER_TICK;
 
     private SignalTime() {}
 
-    public static boolean isSourcePeriod(double ticks) {
-        if (!Double.isFinite(ticks) || ticks <= 0 || ticks > 100) return false;
-        return ticks <= 1
-                ? Math.abs(ticks * 10 - Math.rint(ticks * 10)) < 1e-7
-                : Math.abs(ticks / 2 - Math.rint(ticks / 2)) < 1e-7;
+    public static int stageUnits(int index) {
+        if (index < 0 || index >= STAGE_LENGTH_COUNT)
+            throw new IllegalArgumentException("Stage length index");
+        return index < 4 ? 5 << index : (index - 3) * UNITS_PER_TICK;
     }
 
-    public static double periodAt(int index) {
-        if (index < 0 || index >= PERIOD_COUNT) throw new IllegalArgumentException("Period index");
-        return index < 10 ? (index + 1) / 10.0 : (index - 9) * 2.0;
-    }
-
-    public static int indexOf(double ticks) {
-        if (!isSourcePeriod(ticks)) throw new IllegalArgumentException("Period");
-        return ticks <= 1 ? (int) Math.round(ticks * 10) - 1 : 9 + (int) Math.round(ticks / 2);
+    public static boolean isStageUnits(int units) {
+        for (int index = 0; index < STAGE_LENGTH_COUNT; index++)
+            if (stageUnits(index) == units) return true;
+        return false;
     }
 
     public static long travelUnits(double distance, double speed) {
-        return Math.max(0, (long) Math.ceil(distance / speed * 20 - 1e-9));
+        return Math.max(0, (long) Math.ceil(distance / speed * UNITS_PER_TICK - 1e-9));
     }
 }

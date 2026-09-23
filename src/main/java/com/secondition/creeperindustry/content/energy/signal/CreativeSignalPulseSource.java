@@ -15,9 +15,6 @@ public record CreativeSignalPulseSource(
         long gameTime,
         SignalDefinition signal
 ) implements SignalSource {
-    public static final int PULSE_PERIOD_TICKS = 1;
-    public static final int DEFAULT_PHASE_TICKS = 0;
-
     public CreativeSignalPulseSource {
         if (id == null) {
             throw new IllegalArgumentException("Signal source id cannot be null");

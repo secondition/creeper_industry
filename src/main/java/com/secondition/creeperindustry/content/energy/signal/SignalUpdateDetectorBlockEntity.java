@@ -90,7 +90,8 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
     public double pendingDelay() {
         return nextArrival == Long.MAX_VALUE || level == null
                 ? -1
-                : Math.max(0, nextArrival - level.getGameTime() * 20) / 20.0;
+                : Math.max(0, nextArrival - level.getGameTime() * SignalTime.UNITS_PER_TICK)
+                        / (double) SignalTime.UNITS_PER_TICK;
     }
 
     @Override

@@ -29,7 +29,7 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
             @Nullable CreativeSignalSourceBlockEntity source,
             ContainerData data) {
         super(CIMenuTypes.CREATIVE_SIGNAL_SOURCE.get(), id);
-        checkContainerDataCount(data, 4);
+        checkContainerDataCount(data, 5);
         this.source = source;
         this.data = data;
         addDataSlots(data);
@@ -40,9 +40,12 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
         if (id == 0) source.setSignalType(CreativeSignalSourceSignalType.PULSE);
         else if (id == 1) source.setSignalType(CreativeSignalSourceSignalType.CONTINUOUS);
         else if (id == 2) source.emitPulse();
+        else if (id == 5) source.setSignalType(CreativeSignalSourceSignalType.STATIC);
         else if (id == 3 || id == 4) source.stepPhase(id == 3 ? -1 : 1);
         else if (id >= 100 && id <= 228) source.setAmplitude(id - 164);
-        else if (id >= 300 && id < 360) source.setPeriodIndex(id - 300);
+        else if (id >= 300 && id < 308) source.setStages(2 + (id - 300) * 2);
+        else if (id >= 400 && id < 400 + SignalTime.STAGE_LENGTH_COUNT)
+            source.setStageLengthIndex(id - 400);
         else return false;
         return true;
     }
@@ -65,24 +68,33 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
         return data.get(1);
     }
 
-    public int getPeriodIndex() {
+    public int getStages() {
         return data.get(2);
     }
 
-    public double getPeriodTicks() {
-        return SignalTime.periodAt(Math.clamp(data.get(2), 0, 59));
+    public int getStageLengthIndex() {
+        return data.get(3);
     }
 
-    public double getPhaseTicks() {
-        return data.get(3) / 20.0;
+    public int getPhaseSteps() {
+        return data.get(4);
+    }
+
+    public double getPeriodTicks() {
+        return getStages() * SignalTime.stageUnits(Math.clamp(getStageLengthIndex(), 0,
+                SignalTime.STAGE_LENGTH_COUNT - 1)) / (double) SignalTime.UNITS_PER_TICK;
     }
 
     public static int amplitudeButtonId(int amplitude) {
         return 164 + amplitude;
     }
 
-    public static int periodButtonId(int index) {
-        return 300 + index;
+    public static int stagesButtonId(int stages) {
+        return 300 + (stages - 2) / 2;
+    }
+
+    public static int stageLengthButtonId(int index) {
+        return 400 + index;
     }
 
     public static int setPulseButtonId() {
@@ -97,10 +109,14 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
         return 2;
     }
 
+    public static int setStaticButtonId() {
+        return 5;
+    }
+
     private static Context read(Inventory inventory, RegistryFriendlyByteBuf buf) {
-        SimpleContainerData data = new SimpleContainerData(4);
+        SimpleContainerData data = new SimpleContainerData(5);
         BlockPos pos = buf.readBlockPos();
-        for (int i = 0; i < 4; i++) data.set(i, buf.readVarInt());
+        for (int i = 0; i < 5; i++) data.set(i, buf.readVarInt());
         return new Context(
                 inventory.player.level().getBlockEntity(pos)
                                 instanceof CreativeSignalSourceBlockEntity be

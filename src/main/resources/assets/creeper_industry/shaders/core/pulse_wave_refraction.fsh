@@ -93,7 +93,7 @@ void main() {
         float ripple = sin(dot(normal, vec3(17.0, 23.0, 13.0)) + radius * 1.7 + styles[i].z);
         float pixels = (0.9 + 15.0 * rim) * (1.0 + 0.16 * ripple) * visibility * styles[i].w;
         displacement += pixelDirection * pixels;
-        rimLight += rim * visibility * 0.035;
+        rimLight += rim * visibility * (styles[i].w > 0.0 ? 0.035 : -0.06);
         nearestSurface = min(nearestSurface, hitDistance);
     }
 
@@ -109,7 +109,7 @@ void main() {
         displacedUv = texCoord;
     }
     // A hit is a local visual response, including for a wave that arrived through a
-    // wall. Apply it after the world-space occlusion check, with its own short decay.
+    // wall. Apply it after the world-space occlusion check, with its own recovery.
     vec2 radial = (texCoord - 0.5) * vec2(ViewportSize.x / ViewportSize.y, 1.0);
     float radialLength = length(radial);
     vec2 impactDirection = radial / max(radialLength, 0.0001);
@@ -134,5 +134,5 @@ void main() {
         blurred += texture(SceneColor, clamp(displacedUv + vec2(-blurStep.x, blurStep.y), halfPixel, 1.0 - halfPixel)).rgb * 0.0625;
         refracted = mix(refracted, blurred, min(1.0, ImpactStrength * 1.5));
     }
-    fragColor = vec4(refracted + min(rimLight, 0.06), original.a);
+    fragColor = vec4(clamp(refracted + clamp(rimLight, -0.06, 0.06), 0.0, 1.0), original.a);
 }
