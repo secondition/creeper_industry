@@ -14,6 +14,7 @@ final class PulseWaveFeedback {
     private static final double VISUAL_RECOVERY_TICKS = 12.0;
     private double startedAt = Double.NEGATIVE_INFINITY;
     private float intensity;
+    private float polarity = 1.0F;
     private float direction = 1.0F;
 
     void hit(
@@ -30,11 +31,10 @@ final class PulseWaveFeedback {
                         1.25F,
                         Math.max(strength, remaining) + Math.min(strength, remaining) * 0.25F);
         startedAt = feedbackTime;
+        polarity = wave.polarity();
         direction = (wave.id().getLeastSignificantBits() & 1) == 0 ? 1.0F : -1.0F;
 
-        // The original explosion still supplies the blast sound. A quiet air burst at the
-        // listener supplies arrival feedback without playing GENERIC_EXPLODE twice or
-        // applying distance attenuation a second time after the wave has travelled here.
+        // Play the air burst at the listener after the wave has travelled here.
         level.playLocalSound(
                 player.getX(),
                 player.getEyeY(),
@@ -42,7 +42,7 @@ final class PulseWaveFeedback {
                 SoundEvents.WIND_CHARGE_BURST.value(),
                 SoundSource.BLOCKS,
                 0.65F * strength,
-                0.65F,
+                polarity > 0 ? 0.65F : 1.0F,
                 false);
     }
 
@@ -61,6 +61,10 @@ final class PulseWaveFeedback {
         event.setPitch(event.getPitch() - Mth.cos(age * 2.4F) * 4.5F * strength);
         event.setYaw(event.getYaw() + Mth.sin(age * 2.0F + 0.5F) * 2.8F * strength * direction);
         event.setRoll(event.getRoll() + Mth.sin(age * 2.7F) * 1.8F * strength * direction);
+    }
+
+    float visualPolarity() {
+        return polarity;
     }
 
     float visualStrength(double gameTime) {
@@ -87,5 +91,6 @@ final class PulseWaveFeedback {
     void clear() {
         startedAt = Double.NEGATIVE_INFINITY;
         intensity = 0.0F;
+        polarity = 1.0F;
     }
 }

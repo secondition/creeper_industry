@@ -85,6 +85,14 @@
       ]
     },
     {
+      "name": "ImpactPolarity",
+      "type": "float",
+      "count": 1,
+      "values": [
+        1
+      ]
+    },
+    {
       "name": "WaveCount",
       "type": "int",
       "count": 1,

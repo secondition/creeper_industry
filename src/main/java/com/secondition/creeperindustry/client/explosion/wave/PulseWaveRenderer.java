@@ -54,7 +54,8 @@ public final class PulseWaveRenderer {
             Collection<ClientPulseWave> waves,
             double gameTime,
             float impactStrength,
-            float impactAge) {
+            float impactAge,
+            float impactPolarity) {
         Minecraft minecraft = Minecraft.getInstance();
         if (shader == null) {
             return;
@@ -101,6 +102,7 @@ public final class PulseWaveRenderer {
                     .set((float) main.viewWidth, (float) main.viewHeight);
             shader.safeGetUniform("ImpactStrength").set(impactStrength);
             shader.safeGetUniform("ImpactAge").set(impactAge);
+            shader.safeGetUniform("ImpactPolarity").set(impactPolarity);
             shader.safeGetUniform("WaveCount").set(count);
             for (int i = 0; i < count; i++) {
                 ClientPulseWave wave = SELECTED[i];

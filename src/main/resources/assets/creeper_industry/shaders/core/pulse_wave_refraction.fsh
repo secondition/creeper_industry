@@ -7,6 +7,7 @@ uniform mat4 InverseViewProjection;
 uniform vec2 ViewportSize;
 uniform float ImpactStrength;
 uniform float ImpactAge;
+uniform float ImpactPolarity;
 uniform int WaveCount;
 uniform vec4 Wave0;
 uniform vec4 Wave1;
@@ -114,7 +115,7 @@ void main() {
     vec2 impactDirection = radial / max(radialLength, 0.0001);
     float pressureRipple = sin(radialLength * 12.0 - ImpactAge * 1.8);
     vec2 impactWarp = impactDirection * (14.0 + 8.0 * pressureRipple)
-            * smoothstep(0.0, 0.3, radialLength) * ImpactStrength;
+            * smoothstep(0.0, 0.3, radialLength) * ImpactStrength * ImpactPolarity;
     displacedUv = clamp(displacedUv + impactWarp / ViewportSize, halfPixel, 1.0 - halfPixel);
 
     vec3 refracted = texture(SceneColor, displacedUv).rgb;

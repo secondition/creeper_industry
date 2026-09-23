@@ -95,6 +95,14 @@ public final class ClientPulseWavePresentation {
                 FEEDBACK.hit(level, player, wave, closest, arrival);
             }
         }
+        if (!player.isSpectator())
+            for (ClientPulseWave wave : ClientMachineWaves.arrivals(gameTime, player)) {
+                double closest =
+                        WavePropagationMath.closestDistanceToAABB(
+                                wave.origin(), player.getBoundingBox());
+                double arrival = Mth.clamp(wave.arrivalTime(closest), gameTime - 1.0, gameTime);
+                FEEDBACK.hit(level, player, wave, closest, arrival);
+            }
     }
 
     @SubscribeEvent
@@ -114,7 +122,13 @@ public final class ClientPulseWavePresentation {
             java.util.List<ClientPulseWave> visible = new java.util.ArrayList<>(ACTIVE.values());
             visible.addAll(ClientMachineWaves.shells(time));
             if (!visible.isEmpty() || impact > 0.001F) {
-                PulseWaveRenderer.render(event, visible, time, impact, FEEDBACK.visualAge(time));
+                PulseWaveRenderer.render(
+                        event,
+                        visible,
+                        time,
+                        impact,
+                        FEEDBACK.visualAge(time),
+                        FEEDBACK.visualPolarity());
             }
         }
     }
