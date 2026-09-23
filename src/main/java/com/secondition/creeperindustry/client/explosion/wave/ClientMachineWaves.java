@@ -67,19 +67,22 @@ final class ClientMachineWaves {
                                         || born >= p.end()
                                         || born > time
                                         || time - born > Math.abs(p.amplitude())) continue;
-                                result.add(wave(p, edge, born, false));
+                                ClientPulseWave crest = wave(p, edge, born, false);
+                                if (crest.polarity() > 0) result.add(crest);
                             }
                             // Show the initial finite-speed front even before an oscillation
                             // reaches the observer.
                             if (time >= p.start()
                                     && time - p.start() < Math.abs(p.amplitude())
-                                    && p.end() > p.start())
-                                result.add(
+                                    && p.end() > p.start()) {
+                                ClientPulseWave front =
                                         wave(
                                                 p,
                                                 (long) Math.floor((p.start() + phase) / half),
                                                 p.start(),
-                                                true));
+                                                true);
+                                if (front.polarity() > 0) result.add(front);
+                            }
                         });
         return result;
     }
@@ -113,7 +116,8 @@ final class ClientMachineWaves {
                     || born <= lastHeard.getOrDefault(entry.getKey(), Double.NEGATIVE_INFINITY))
                 continue;
             ClientPulseWave wave = wave(p, edge, born, initial);
-            if (wave.canImpactAt(time)
+            if (wave.polarity() > 0
+                    && wave.canImpactAt(time)
                     && wave.radiusAt(time) >= closest
                     && wave.radiusAt(time - 1) <= farthest
                     && wave.strengthAt(closest) > 0.0F) {
