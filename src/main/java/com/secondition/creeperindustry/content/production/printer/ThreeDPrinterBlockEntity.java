@@ -15,6 +15,8 @@ import net.minecraft.world.item.*;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.common.util.BlockSnapshot;
+import net.neoforged.neoforge.event.EventHooks;
 
 import java.util.*;
 
@@ -124,7 +126,12 @@ public class ThreeDPrinterBlockEntity extends BlockEntity {
                     status(player, "materials", new ItemStack(material).getHoverName());
                 return;
             }
+            BlockSnapshot snapshot = BlockSnapshot.create(server.dimension(), server, pos, Block.UPDATE_ALL);
             if (!level.setBlock(pos, cell.state(), Block.UPDATE_ALL)) return;
+            if (EventHooks.onBlockPlace(player, snapshot, Direction.UP)) {
+                snapshot.restoreToLocation(server, pos, Block.UPDATE_ALL);
+                return;
+            }
             materialSlot.take();
             fuelSlot.take();
             index++;
