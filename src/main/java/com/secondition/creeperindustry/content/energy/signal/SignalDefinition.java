@@ -1,38 +1,57 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
-/** Source parameters; composite waveforms are stored separately. */
+/** Parameters of a sampled traveling wave. Phase is measured in cycles at the anchor tick. */
 public record SignalDefinition(
-        int amplitude, int stages, int stageUnits, int phaseSteps, SignalWaveform waveform) {
+        int amplitude,
+        int wavelength,
+        int frequencyNumerator,
+        int frequencyDenominator,
+        long anchorTick,
+        double phase,
+        SignalWaveform waveform) {
+    public static final int AMPLITUDE_SCALE = 1000;
+
     public SignalDefinition {
         if (amplitude == 0 || Math.abs((long) amplitude) > 4096)
             throw new IllegalArgumentException("Amplitude outside signed source range");
-        if (waveform == null) throw new IllegalArgumentException("Missing waveform");
-        if (waveform == SignalWaveform.STATIC) {
-            if (stages != 0 || stageUnits != 0 || phaseSteps != 0)
-                throw new IllegalArgumentException("Static field has no cycle");
-        } else if (stages < 2
-                || stages > 16
-                || stages % 2 != 0
-                || !SignalTime.isStageUnits(stageUnits)
-                || phaseSteps < 0
-                || phaseSteps >= stages) {
-            throw new IllegalArgumentException("Invalid waveform stages");
+        if (waveform == SignalWaveform.PULSE) {
+            if (wavelength != 0 || frequencyNumerator != 0 || frequencyDenominator != 0)
+                throw new IllegalArgumentException("Pulse has no cycle");
+        } else if (waveform != SignalWaveform.TRIANGLE
+                || wavelength < 1 || wavelength > 16
+                || frequencyNumerator < 1 || frequencyNumerator > 32767
+                || frequencyDenominator < 1 || frequencyDenominator > 32767
+                || frequencyNumerator * 320L < frequencyDenominator
+                || frequencyNumerator > 8L * frequencyDenominator
+                || !Double.isFinite(phase) || phase < 0 || phase >= 1) {
+            throw new IllegalArgumentException("Invalid wave parameters");
         }
     }
 
-    public int periodUnits() {
-        return stages * stageUnits;
+    public static SignalDefinition pulse(int amplitude) {
+        return new SignalDefinition(amplitude, 0, 0, 0, 0, 0, SignalWaveform.PULSE);
     }
 
-    public int phaseUnits() {
-        return phaseSteps * stageUnits;
+    public double frequency() {
+        return frequencyNumerator / (double) frequencyDenominator;
     }
 
-    public double periodTicks() {
-        return (double) periodUnits() / SignalTime.UNITS_PER_TICK;
+    public double speed() {
+        return wavelength * frequency();
     }
 
-    public long sample(long peak, long timeUnits) {
-        return waveform.sample(peak, stages, stageUnits, phaseUnits(), timeUnits);
+    public double cycle(double emissionTime) {
+        return phase + (emissionTime - anchorTick) * frequency();
+    }
+
+    public long sample(long peak, double emissionTime) {
+        if (waveform == SignalWaveform.PULSE) return peak;
+        long window = (long) Math.floor(cycle(emissionTime) * wavelength);
+        return Math.round(peak * SignalWaveform.average(wavelength, (int) Math.floorMod(window, wavelength)));
+    }
+
+    public double nextWindow(double emissionTime) {
+        long window = (long) Math.floor(cycle(emissionTime) * wavelength + 1e-9);
+        return anchorTick + ((window + 1.0) / wavelength - phase) / frequency();
     }
 }

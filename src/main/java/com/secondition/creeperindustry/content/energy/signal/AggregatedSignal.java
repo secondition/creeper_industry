@@ -4,6 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
+import java.util.List;
+
 public record AggregatedSignal(
         ResourceKey<Level> level,
         BlockPos targetPos,
@@ -11,12 +13,15 @@ public record AggregatedSignal(
         double amplitude,
         double instantaneousValue,
         int contributionCount,
-        int strongestPropagationCost,
-        boolean fast,
-        double compositePeriodTicks,
-        int completedCycles,
-        boolean changed) {
-    public int processingUnits(double requirement) {
-        return amplitude > requirement ? (fast ? completedCycles : changed ? 1 : 0) : 0;
+        List<Step> steps) {
+    public record Step(double before, double after) {
+        public boolean risesPast(int threshold) {
+            return Math.abs(after) > Math.abs(before)
+                    && (threshold > 0 ? after >= threshold : after <= threshold);
+        }
+    }
+
+    public int processingUnits(int threshold) {
+        return (int) steps.stream().filter(step -> step.risesPast(threshold)).count();
     }
 }

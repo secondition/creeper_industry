@@ -32,7 +32,7 @@ public record ExplosionSignalSource(
             return Optional.empty();
         }
 
-        SignalDefinition signal = new SignalDefinition(amplitude.getAsInt(), 0, 0, 0, SignalWaveform.STATIC);
+        SignalDefinition signal = SignalDefinition.pulse(amplitude.getAsInt());
         return Optional.of(new ExplosionSignalSource(
                 UUID.randomUUID(),
                 context.level(),

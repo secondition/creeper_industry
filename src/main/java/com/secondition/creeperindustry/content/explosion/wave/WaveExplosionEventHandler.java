@@ -59,14 +59,8 @@ public final class WaveExplosionEventHandler {
                                 serverLevel.dimension(),
                                 emission.origin(),
                                 emission.emissionGameTime(),
-                                new com.secondition.creeperindustry.content.energy.signal
-                                        .SignalDefinition(
-                                        (int) amplitude,
-                                        0,
-                                        0,
-                                        0,
-                                        com.secondition.creeperindustry.content.energy.signal
-                                                .SignalWaveform.STATIC)),
+                                com.secondition.creeperindustry.content.energy.signal
+                                        .SignalDefinition.pulse((int) amplitude)),
                         false);
     }
 

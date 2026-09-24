@@ -107,7 +107,7 @@ public final class BiosphereCultivationRecipeSerializer
                             buffer.writeVarInt(catalyst.count());
                         });
         ItemStack.LIST_STREAM_CODEC.encode(buffer, recipe.outputs());
-        buffer.writeVarInt(recipe.signalRequirement().minimumAmplitude());
+        buffer.writeVarInt(recipe.signalRequirement().startAmplitude());
         buffer.writeVarInt(recipe.processingUnits());
     }
 }

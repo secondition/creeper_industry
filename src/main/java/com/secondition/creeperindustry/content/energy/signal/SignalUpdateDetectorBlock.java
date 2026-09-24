@@ -52,14 +52,13 @@ public class SignalUpdateDetectorBlock extends SimpleEntityBlock implements Enti
             return InteractionResult.SUCCESS;
         }
 
-        refreshForDebugRead(level, pos);
-
         if (level.getBlockEntity(pos) instanceof SignalUpdateDetectorBlockEntity detector) {
+            double value = SignalRuntimeAccess.get(level).readSignal(level, pos);
             player.displayClientMessage(
                     Component.translatable(
                                     "message.creeper_industry.signal_update_detector.reading",
-                                    detector.getCurrentAmplitude(),
-                                    detector.getCurrentInstantaneousValue(),
+                                    Math.abs(value),
+                                    value,
                                     detector.getLastNonZeroAmplitude())
                             .withStyle(ChatFormatting.YELLOW),
                     false);
@@ -74,7 +73,4 @@ public class SignalUpdateDetectorBlock extends SimpleEntityBlock implements Enti
         return InteractionResult.CONSUME;
     }
 
-    private void refreshForDebugRead(Level level, BlockPos pos) {
-        SignalRuntimeAccess.get(level).refreshReceiver(level, pos);
-    }
 }

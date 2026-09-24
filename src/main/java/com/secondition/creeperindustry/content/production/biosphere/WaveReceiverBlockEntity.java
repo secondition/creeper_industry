@@ -10,7 +10,6 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class WaveReceiverBlockEntity extends BlockEntity implements SignalReceiver {
     private BlockPos controller;
-    private long nextArrival = Long.MAX_VALUE;
 
     public WaveReceiverBlockEntity(BlockPos pos, BlockState state) {
         super(CIBlockEntityTypes.WAVE_RECEIVER.get(), pos, state);
@@ -24,10 +23,6 @@ public final class WaveReceiverBlockEntity extends BlockEntity implements Signal
 
     public void unbind(BlockPos owner) {
         if (owner.equals(controller)) controller = null;
-    }
-
-    public void scheduleSignalChange(long at) {
-        nextArrival = at;
     }
 
     public void receiveSignal(AggregatedSignal signal) {

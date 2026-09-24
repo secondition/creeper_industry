@@ -1,7 +1,7 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
 public interface SignalReceiver {
-    default void scheduleSignalChange(long arrivalUnits) {}
+    default void scheduleSignalChange(double arrivalTick) {}
 
     void receiveSignal(AggregatedSignal signal);
 

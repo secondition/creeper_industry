@@ -4,8 +4,7 @@ import java.util.Locale;
 
 public enum CreativeSignalSourceSignalType {
     PULSE(0, "pulse"),
-    CONTINUOUS(1, "continuous"),
-    STATIC(2, "static");
+    CONTINUOUS(1, "continuous");
 
     private final int serializedId;
     private final String serializedName;

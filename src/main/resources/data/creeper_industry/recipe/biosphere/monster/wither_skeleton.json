@@ -15,7 +15,7 @@
     }
   ],
   "signal": {
-    "minimum_amplitude": 9
+    "start_amplitude": 9
   },
   "processing_units": 20
 }

@@ -10,13 +10,12 @@ import net.minecraft.world.level.Level;
 
 import java.util.*;
 
-/** Authoritative per-dimension propagation, arrival scheduling and receiver waveform caches. */
+/** Authoritative per-dimension propagation and discrete receiver events. */
 public final class SignalRuntime implements AutoCloseable {
     private final com.secondition.creeperindustry.content.production.biosphere
                     .BiosphereStructureManager
-            structures =
-                    new com.secondition.creeperindustry.content.production.biosphere
-                            .BiosphereStructureManager();
+            structures = new com.secondition.creeperindustry.content.production.biosphere
+                    .BiosphereStructureManager();
 
     public com.secondition.creeperindustry.content.production.biosphere.BiosphereStructureManager
             structures() {
@@ -29,16 +28,36 @@ public final class SignalRuntime implements AutoCloseable {
             new InMemoryContinuousSignalSourceRepository();
     private final DuctNetworkManager ducts = new DuctNetworkManager();
     private final Map<BlockPos, ReceiverState> states = new HashMap<>();
-    private final Map<UUID, List<SourceChange>> history = new HashMap<>();
-    private final Set<BlockPos> activeTargets = new LinkedHashSet<>();
+    private final Map<UUID, List<Version>> history = new HashMap<>();
+    private final Map<UUID, Version> current = new HashMap<>();
     private final Set<BlockPos> registrations = new LinkedHashSet<>();
     private final Set<BlockPos> topologyChanges = new LinkedHashSet<>();
-    private final NavigableSet<Arrival> arrivals =
-            new TreeSet<>(
-                    Comparator.comparingLong(Arrival::time).thenComparingLong(Arrival::order));
-    private final Map<
-                    net.minecraft.world.level.ChunkPos, net.minecraft.world.level.chunk.ChunkAccess>
+    private final NavigableSet<Arrival> arrivals = new TreeSet<>(
+            Comparator.comparingDouble(Arrival::time).thenComparingLong(Arrival::order));
+    private final Map<net.minecraft.world.level.ChunkPos, net.minecraft.world.level.chunk.ChunkAccess>
             loadedChunks = new HashMap<>();
+    private long sequence;
+    private long lastTick = Long.MIN_VALUE;
+
+    private static final class Version {
+        final UUID id = UUID.randomUUID();
+        final SignalSource source;
+        long end = Long.MAX_VALUE;
+
+        Version(SignalSource source) {
+            this.source = source;
+        }
+
+        double speed() {
+            return source instanceof ContinuousSignalSource ? source.signal().speed()
+                    : WavePropagationProfile.DEFAULT.propagationSpeedBlocksPerTick();
+        }
+    }
+
+    private record PathKey(UUID source, UUID version, String path, long epoch) {}
+    private record Contribution(CompositeWaveform.Term term, double delay) {}
+    private record Arrival(double time, long order, BlockPos target, ReceiverState owner,
+            PathKey key, Contribution value, boolean sample) {}
 
     public void queueLoadedChunk(net.minecraft.world.level.chunk.ChunkAccess chunk) {
         loadedChunks.put(chunk.getPos(), chunk);
@@ -57,25 +76,17 @@ public final class SignalRuntime implements AutoCloseable {
             for (int sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
                 var section = sections[sectionIndex];
                 if (section.hasOnlyAir()
-                        || !section.maybeHas(
-                                s ->
-                                        s.is(
-                                                com.secondition.creeperindustry.CIBlocks
-                                                        .BLASTPROOF_DUCT
-                                                        .get()))) continue;
+                        || !section.maybeHas(s -> s.is(com.secondition.creeperindustry.CIBlocks
+                                .BLASTPROOF_DUCT.get()))) continue;
                 int baseY = chunk.getMinBuildHeight() + sectionIndex * 16;
                 for (int y = 0; y < 16; y++)
                     for (int z = 0; z < 16; z++)
                         for (int x = 0; x < 16; x++)
-                            if (section.getBlockState(x, y, z)
-                                    .is(
-                                            com.secondition.creeperindustry.CIBlocks.BLASTPROOF_DUCT
-                                                    .get())) {
-                                ducts.indexDuct(
-                                        new BlockPos(
-                                                chunk.getPos().getMinBlockX() + x,
-                                                baseY + y,
-                                                chunk.getPos().getMinBlockZ() + z));
+                            if (section.getBlockState(x, y, z).is(
+                                    com.secondition.creeperindustry.CIBlocks.BLASTPROOF_DUCT.get())) {
+                                ducts.indexDuct(new BlockPos(
+                                        chunk.getPos().getMinBlockX() + x, baseY + y,
+                                        chunk.getPos().getMinBlockZ() + z));
                                 found = true;
                             }
             }
@@ -83,25 +94,6 @@ public final class SignalRuntime implements AutoCloseable {
             if (found) topologyChanges.addAll(receivers.getAll());
         }
     }
-
-    private long sequence;
-    private long lastTick = Long.MIN_VALUE;
-    private static final long HISTORY_UNITS =
-            1000000; // > maximum bounded duct route + source radius
-
-    private record SourceChange(long time, SignalSource before, SignalSource after) {}
-
-    private record PathKey(UUID source, String path) {}
-
-    private record Contribution(CompositeWaveform.Term term, int cost, long delay) {}
-
-    private record Arrival(
-            long time,
-            long order,
-            BlockPos target,
-            ReceiverState owner,
-            PathKey key,
-            Contribution value) {}
 
     public SignalReceiverIndex receiverIndex() {
         return receivers;
@@ -127,15 +119,24 @@ public final class SignalRuntime implements AutoCloseable {
     public void unregisterReceiver(BlockPos pos) {
         receivers.unregister(pos);
         registrations.remove(pos);
-        activeTargets.remove(pos);
-        ReceiverState state = states.remove(pos);
         topologyChanges.remove(pos);
-        if (state != null)
-            for (Arrival arrival : state.pending) arrivals.remove(arrival);
+        ReceiverState state = states.remove(pos);
+        if (state != null) for (Arrival arrival : state.pending) arrivals.remove(arrival);
     }
 
-    public void refreshReceiver(Level level, BlockPos pos) {
-        registrations.add(pos.immutable());
+    public double readSignal(Level level, BlockPos pos) {
+        ReceiverState state = states.get(pos);
+        if (state == null) return 0;
+        Map<PathKey, Contribution> current = new HashMap<>(state.contributions);
+        state.pending.stream()
+                .filter(arrival -> !arrival.sample() && arrival.time() <= level.getGameTime() + 1e-7)
+                .sorted(Comparator.comparingDouble(Arrival::time).thenComparingLong(Arrival::order))
+                .forEach(arrival -> {
+                    if (arrival.value() == null) current.remove(arrival.key());
+                    else current.put(arrival.key(), arrival.value());
+                });
+        return new CompositeWaveform(current.values().stream().map(Contribution::term).toList())
+                .valueAt(level.getGameTime() + 1e-7) / (double) SignalDefinition.AMPLITUDE_SCALE;
     }
 
     public void scheduleTopologyRefresh(Level level, Collection<BlockPos> positions) {
@@ -143,360 +144,274 @@ public final class SignalRuntime implements AutoCloseable {
     }
 
     public void upsert(Level level, ContinuousSignalSource source) {
-        SignalSource before = sources.get(source.id()).orElse(null);
         sources.put(source);
         machineField.change((ServerLevel) level, source.id(), source);
-        SourceChange change = new SourceChange(level.getGameTime() * SignalTime.UNITS_PER_TICK, before, source);
-        history.computeIfAbsent(source.id(), k -> new ArrayList<>()).add(change);
-        scheduleChange(level, change, affectedTargets(level, change));
-    }
-
-    public void removeSource(Level level, UUID id) {
-        sources.remove(id)
-                .ifPresent(
-                        before -> {
-                            machineField.change((ServerLevel) level, id, null);
-                            SourceChange change =
-                                    new SourceChange(level.getGameTime() * SignalTime.UNITS_PER_TICK, before, null);
-                            history.computeIfAbsent(id, k -> new ArrayList<>()).add(change);
-                            scheduleChange(level, change, affectedTargets(level, change));
-                        });
-    }
-
-    public void emitPulse(Level level, SignalSource source, boolean present) {
-        SourceChange change = new SourceChange(source.gameTime() * SignalTime.UNITS_PER_TICK, null, source);
-        history.computeIfAbsent(source.id(), k -> new ArrayList<>()).add(change);
-        scheduleChange(level, change, affectedTargets(level, change));
-        if (present && level instanceof ServerLevel server) {
-            WaveRuntimeAccess.get(server)
-                    .spawnPulse(
-                            server,
-                            new PulseWaveEmission(
-                                    source.id(),
-                                    source.position(),
-                                    source.gameTime(),
-                                    source.signal().amplitude(),
-                                    WavePropagationProfile.DEFAULT,
-                                    null,
-                                    null,
-                                    null));
+        endVersion(level, source.id());
+        Version version = new Version(source);
+        current.put(source.id(), version);
+        history.computeIfAbsent(source.id(), k -> new ArrayList<>()).add(version);
+        for (BlockPos pos : affectedTargets(level, source)) {
+            ReceiverState state = states.get(pos);
+            if (state != null) scheduleVersion(level, state, pos, version, false);
         }
     }
 
-    private Collection<BlockPos> affectedTargets(Level level, SourceChange change) {
-        Set<BlockPos> result = new HashSet<>();
-        for (SignalSource source : new SignalSource[] {change.before(), change.after()})
-            if (source != null)
-                result.addAll(
-                        ducts.getPotentialTargets(
-                                level,
-                                source.position(),
-                                Math.abs(source.signal().amplitude()) + 1,
-                                receivers));
-        return result;
+    public void removeSource(Level level, UUID id) {
+        if (sources.remove(id).isPresent()) {
+            machineField.change((ServerLevel) level, id, null);
+            endVersion(level, id);
+        }
     }
 
-    private Map<String, DuctNetworkManager.Route> routes(
-            Level level, SignalSource source, BlockPos pos) {
-        if (source == null) return Map.of();
+    private void endVersion(Level level, UUID id) {
+        Version old = current.remove(id);
+        if (old == null) return;
+        old.end = level.getGameTime();
+        for (var entry : states.entrySet())
+            for (var path : entry.getValue().paths.entrySet())
+                if (path.getKey().version().equals(old.id))
+                    closePath(level, entry.getKey(), entry.getValue(), path.getKey(),
+                            level.getGameTime() + path.getValue());
+    }
+
+    public void emitPulse(Level level, SignalSource source, boolean present) {
+        Version version = new Version(source);
+        version.end = source.gameTime() + 3;
+        history.computeIfAbsent(source.id(), k -> new ArrayList<>()).add(version);
+        for (BlockPos pos : affectedTargets(level, source)) {
+            ReceiverState state = states.get(pos);
+            if (state != null) scheduleVersion(level, state, pos, version, false);
+        }
+        if (present && level instanceof ServerLevel server) {
+            WaveRuntimeAccess.get(server).spawnPulse(server, new PulseWaveEmission(
+                    source.id(), source.position(), source.gameTime(), source.signal().amplitude(),
+                    WavePropagationProfile.DEFAULT, null, null, null));
+        }
+    }
+
+    private Collection<BlockPos> affectedTargets(Level level, SignalSource source) {
+        return ducts.getPotentialTargets(level, source.position(),
+                Math.abs(source.signal().amplitude()) + 1, receivers);
+    }
+
+    private Map<String, DuctNetworkManager.Route> routes(Level level, SignalSource source, BlockPos pos) {
         Map<String, DuctNetworkManager.Route> result = new HashMap<>();
-        for (var route :
-                ducts.routes(level, source.position(), pos, Math.abs(source.signal().amplitude())))
-            result.put(route.id(), route);
+        for (var route : ducts.routes(level, source.position(), pos,
+                Math.abs(source.signal().amplitude()))) result.put(route.id(), route);
         return result;
     }
 
-    private void scheduleChange(Level level, SourceChange change, Collection<BlockPos> targets) {
-        for (BlockPos target : targets) {
-            ReceiverState state = states.get(target);
-            if (state == null || !level.hasChunkAt(target)) continue;
-            Map<String, DuctNetworkManager.Route> oldRoutes =
-                    routes(level, change.before(), target);
-            Map<String, DuctNetworkManager.Route> newRoutes = routes(level, change.after(), target);
-            SignalSource identity = change.after() != null ? change.after() : change.before();
-            for (var old : oldRoutes.values())
-                if (!newRoutes.containsKey(old.id())) {
-                    queue(
-                            level,
-                            change.time() + delay(old),
-                            target,
-                            state,
-                            new PathKey(identity.id(), old.id()),
-                            null);
+    private static double delay(Version version, DuctNetworkManager.Route route) {
+        return route.travelDistance() / version.speed();
+    }
+
+    private Contribution contribution(Version version, DuctNetworkManager.Route route, int step) {
+        SignalDefinition signal = version.source.signal();
+        long amplitude = Math.round(Math.copySign(Math.max(0,
+                Math.abs(signal.amplitude()) - route.attenuationDistance()),
+                signal.amplitude()) * SignalDefinition.AMPLITUDE_SCALE);
+        if (!(version.source instanceof ContinuousSignalSource)) amplitude /= 1L << step;
+        return new Contribution(new CompositeWaveform.Term(amplitude, signal, delay(version, route)),
+                delay(version, route));
+    }
+
+    private void scheduleVersion(Level level, ReceiverState state, BlockPos pos,
+            Version version, boolean replay) {
+        if (version.end <= version.source.gameTime()) return;
+        for (var route : routes(level, version.source, pos).values()) {
+            if (version.source instanceof ContinuousSignalSource
+                    && version.source.signal().wavelength() <= 2) continue;
+            Contribution base = contribution(version, route, 0);
+            if (base.term().amplitude() == 0) continue;
+            double start = version.source.gameTime() + base.delay();
+            double end = version.end == Long.MAX_VALUE ? Double.POSITIVE_INFINITY
+                    : version.end + base.delay();
+            if (replay && end <= level.getGameTime()) continue;
+            PathKey key = new PathKey(version.source.id(), version.id, route.id(), sequence++);
+            state.paths.put(key, base.delay());
+            if (version.source instanceof ContinuousSignalSource) {
+                if (replay && start <= level.getGameTime() && end > level.getGameTime())
+                    state.contributions.put(key, base);
+                else if (start > level.getGameTime() || !replay)
+                    queue(level, start, pos, state, key, base, false);
+                if (Double.isFinite(end) && end > level.getGameTime())
+                    closePath(level, pos, state, key, end);
+            } else {
+                for (int step = 0; step < 3; step++) {
+                    double at = start + step;
+                    if (replay && at <= level.getGameTime() && at + 1 > level.getGameTime())
+                        state.contributions.put(key, contribution(version, route, step));
+                    else if (at > level.getGameTime() || !replay)
+                        queue(level, at, pos, state, key, contribution(version, route, step), false);
                 }
-            if (change.after() == null) continue;
-            SignalSource source = change.after();
-            for (var route : newRoutes.values()) {
-                long at = change.time() + delay(route);
-                long amplitude =
-                        Math.round(
-                                Math.copySign(
-                                                Math.max(
-                                                        0,
-                                                        Math.abs(source.signal().amplitude())
-                                                                - route.attenuationDistance()),
-                                                source.signal().amplitude())
-                                        * 1000);
-                if (amplitude == 0) continue;
-                PathKey key = new PathKey(source.id(), route.id());
-                int cost = (int) Math.ceil(route.attenuationDistance());
-                if (source instanceof ContinuousSignalSource) {
-                    SignalDefinition signal = source.signal();
-                    int period = signal.periodUnits();
-                    int phase = period == 0 ? 0 :
-                            (int) Math.floorMod(signal.phaseUnits() - delay(route), period);
-                    queue(
-                            level,
-                            at,
-                            target,
-                            state,
-                            key,
-                            new Contribution(
-                                    new CompositeWaveform.Term(amplitude, period, signal.stages(), phase, false),
-                                    cost,
-                                    delay(route)));
-                } else {
-                    for (int step = 0; step < 3; step++)
-                        queue(
-                                level,
-                                at + step * SignalTime.UNITS_PER_TICK,
-                                target,
-                                state,
-                                key,
-                                new Contribution(
-                                        new CompositeWaveform.Term(amplitude / (1L << step), 0, 0, 0, true),
-                                        cost,
-                                        delay(route)));
-                    queue(level, at + 3L * SignalTime.UNITS_PER_TICK, target, state, key, null);
-                }
+                if (end > level.getGameTime()) closePath(level, pos, state, key, end);
             }
         }
     }
 
-    private static long delay(DuctNetworkManager.Route route) {
-        return SignalTime.travelUnits(
-                route.travelDistance(),
-                WavePropagationProfile.DEFAULT.propagationSpeedBlocksPerTick());
+    private void closePath(Level level, BlockPos pos, ReceiverState state, PathKey key,
+            double at) {
+        if (state.closing.add(key)) queue(level, at, pos, state, key, null, false);
     }
 
-    private void queue(
-            Level level,
-            long at,
-            BlockPos pos,
-            ReceiverState state,
-            PathKey key,
-            Contribution value) {
-        Arrival arrival = new Arrival(at, sequence++, pos.immutable(), state, key, value);
+    private void queue(Level level, double at, BlockPos pos, ReceiverState state,
+            PathKey key, Contribution value, boolean sample) {
+        Arrival arrival = new Arrival(at, sequence++, pos.immutable(), state, key, value, sample);
         arrivals.add(arrival);
         state.pending.add(arrival);
-        state.pendingTimes.merge(at, 1, Integer::sum);
-        if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof SignalReceiver receiver)
-            receiver.scheduleSignalChange(state.pendingTimes.firstKey());
+        notifyPending(level, pos, state);
+    }
+
+    private static void notifyPending(Level level, BlockPos pos, ReceiverState state) {
+        if (level.hasChunkAt(pos) && level.getBlockEntity(pos) instanceof SignalReceiver receiver) {
+            double next = state.pending.stream().mapToDouble(Arrival::time).min()
+                    .orElse(Double.POSITIVE_INFINITY);
+            receiver.scheduleSignalChange(next);
+        }
+    }
+
+    private void nextSample(Level level, BlockPos pos, ReceiverState state, double from) {
+        if (state.sample != null) {
+            arrivals.remove(state.sample);
+            state.pending.remove(state.sample);
+            state.sample = null;
+        }
+        double next = state.wave.nextChange(from + 1e-7);
+        if (!Double.isFinite(next)) return;
+        Arrival arrival = new Arrival(next, sequence++, pos, state, null, null, true);
+        arrivals.add(arrival);
+        state.pending.add(arrival);
+        state.sample = arrival;
+        notifyPending(level, pos, state);
+    }
+
+    private void reroute(ServerLevel level, BlockPos pos, ReceiverState state, long now) {
+        for (Version version : current.values()) {
+            Map<String, DuctNetworkManager.Route> next = routes(level, version.source, pos);
+            for (var path : List.copyOf(state.paths.entrySet())) {
+                if (!path.getKey().version().equals(version.id) || state.closing.contains(path.getKey()))
+                    continue;
+                DuctNetworkManager.Route route = next.get(path.getKey().path());
+                if (route == null || Double.compare(path.getValue(), delay(version, route)) != 0)
+                    closePath(level, pos, state, path.getKey(), now + path.getValue());
+                else next.remove(path.getKey().path());
+            }
+            for (var route : next.values()) {
+                Contribution base = contribution(version, route, 0);
+                if (base.term().amplitude() == 0 || version.source.signal().wavelength() <= 2)
+                    continue;
+                PathKey key = new PathKey(version.source.id(), version.id, route.id(), sequence++);
+                state.paths.put(key, base.delay());
+                queue(level, now + base.delay(), pos, state, key, base, false);
+            }
+        }
     }
 
     public void tick(ServerLevel level) {
-        long now = level.getGameTime() * SignalTime.UNITS_PER_TICK;
+        long now = level.getGameTime();
         if (lastTick == now) return;
         lastTick = now;
         indexLoadedChunks(level);
         structures.tick(level);
         machineField.tick(level);
+        Set<ReceiverState> touched = new HashSet<>();
         for (BlockPos pos : List.copyOf(registrations)) {
             registrations.remove(pos);
-            if (!level.hasChunkAt(pos) || !(level.getBlockEntity(pos) instanceof SignalReceiver))
-                continue;
-            // Existing receiver refreshes must not replay history or manufacture an edge.
-            if (states.containsKey(pos)) continue;
-            ReceiverState state = new ReceiverState(now);
+            if (!level.hasChunkAt(pos) || !(level.getBlockEntity(pos) instanceof SignalReceiver)
+                    || states.containsKey(pos)) continue;
+            ReceiverState state = new ReceiverState(pos);
             states.put(pos, state);
-            activeTargets.add(pos);
-            for (List<SourceChange> changes : history.values())
-                for (SourceChange change : changes) scheduleChange(level, change, List.of(pos));
-            state.initializing = true;
+            for (List<Version> versions : history.values())
+                for (Version version : versions) scheduleVersion(level, state, pos, version, true);
+            state.rebuild();
+            state.previous = state.wave.valueAt(now + 1e-7);
+            nextSample(level, pos, state, now);
+            touched.add(state);
         }
-        if (!topologyChanges.isEmpty()) {
-            // Re-route only subscribed targets affected by the changed network.
-            for (BlockPos pos : List.copyOf(topologyChanges)) {
-                ReceiverState state = states.get(pos);
-                if (state == null) continue;
-                Map<UUID, Map<String, Long>> delays = state.pathDelays();
-                for (ContinuousSignalSource source : sources.getActiveSources()) {
-                    Map<String, DuctNetworkManager.Route> next = routes(level, source, pos);
-                    for (var path : delays.getOrDefault(source.id(), Map.of()).entrySet())
-                        if (!next.containsKey(path.getKey())) {
-                            // Already emitted versions finish on their original route; a delayed
-                            // cutoff follows them.
-                            queue(level, now + path.getValue(), pos, state,
-                                    new PathKey(source.id(), path.getKey()), null);
-                        }
-                    scheduleChange(level, new SourceChange(now, null, source), List.of(pos));
-                }
-            }
-            topologyChanges.clear();
+        for (BlockPos pos : List.copyOf(topologyChanges)) {
+            ReceiverState state = states.get(pos);
+            if (state != null && level.hasChunkAt(pos)) reroute(level, pos, state, now);
         }
-        while (!arrivals.isEmpty() && arrivals.first().time() <= now) {
-            long at = arrivals.first().time();
-            Map<ReceiverState, Map<PathKey, Contribution>> changed = new HashMap<>();
-            while (!arrivals.isEmpty() && arrivals.first().time() == at) {
+        topologyChanges.clear();
+        while (!arrivals.isEmpty() && arrivals.first().time() <= now + 1e-7) {
+            double at = arrivals.first().time();
+            Map<ReceiverState, List<Arrival>> batch = new HashMap<>();
+            while (!arrivals.isEmpty() && arrivals.first().time() - at < 1e-9) {
                 Arrival arrival = arrivals.pollFirst();
                 ReceiverState state = states.get(arrival.target());
                 if (state != arrival.owner()) continue;
                 state.pending.remove(arrival);
-                state.pendingTimes.computeIfPresent(at, (t, count) -> count > 1 ? count - 1 : null);
-                if (level.hasChunkAt(arrival.target())
-                        && level.getBlockEntity(arrival.target())
-                                instanceof SignalReceiver receiver)
-                    receiver.scheduleSignalChange(
-                            state.pendingTimes.isEmpty()
-                                    ? Long.MAX_VALUE
-                                    : state.pendingTimes.firstKey());
-                activeTargets.add(arrival.target());
-                if (!changed.containsKey(state)) {
-                    state.settle(at);
-                    changed.put(state, new HashMap<>(state.contributions));
+                batch.computeIfAbsent(state, k -> new ArrayList<>()).add(arrival);
+            }
+            for (var entry : batch.entrySet()) {
+                ReceiverState state = entry.getKey();
+                long before = state.previous;
+                boolean changed = false;
+                for (Arrival arrival : entry.getValue()) {
+                    if (arrival.sample()) {
+                        if (state.sample == arrival) state.sample = null;
+                        continue;
+                    }
+                    if (arrival.value() == null) {
+                        state.contributions.remove(arrival.key());
+                        state.paths.remove(arrival.key());
+                        state.closing.remove(arrival.key());
+                    } else state.contributions.put(arrival.key(), arrival.value());
+                    changed = true;
                 }
-                if (arrival.value() == null) state.contributions.remove(arrival.key());
-                else state.contributions.put(arrival.key(), arrival.value());
+                if (changed) state.rebuild();
+                long after = state.wave.valueAt(at + 1e-7);
+                if (before != after) {
+                    state.steps.add(new AggregatedSignal.Step(before /
+                            (double) SignalDefinition.AMPLITUDE_SCALE,
+                            after / (double) SignalDefinition.AMPLITUDE_SCALE));
+                    state.previous = after;
+                    touched.add(state);
+                } else if (changed) touched.add(state);
+                nextSample(level, state.pos, state, at);
+                notifyPending(level, state.pos, state);
             }
-            for (var entry : changed.entrySet())
-                if (!entry.getValue().equals(entry.getKey().contributions))
-                    entry.getKey().rebuild(at);
         }
-        for (BlockPos pos : List.copyOf(activeTargets)) {
-            ReceiverState state = states.get(pos);
-            if (state == null) {
-                activeTargets.remove(pos);
-                continue;
-            }
-            if (!level.hasChunkAt(pos)
-                    || !(level.getBlockEntity(pos) instanceof SignalReceiver receiver)) {
+        for (ReceiverState state : touched) {
+            BlockPos pos = state.pos;
+            if (pos == null) continue;
+            if (!level.hasChunkAt(pos) || !(level.getBlockEntity(pos) instanceof SignalReceiver receiver)) {
                 unregisterReceiver(pos);
                 continue;
             }
-            state.settle(now);
-            long value = state.wave.valueAt(now);
-            if (state.initializing) {
-                state.previous = value;
-                state.cycles.clear();
-                state.initializing = false;
-            }
-            boolean fast = !state.slowDuringTick && (state.wave.fast() || !state.cycles.isEmpty());
-            if (fast) {
-                // Changes within one tick can have different peaks. Deliver each completed interval
-                // separately.
-                for (var completed : state.cycles.entrySet())
-                    receiver.receiveSignal(
-                            new AggregatedSignal(
-                                    level.dimension(),
-                                    pos,
-                                    level.getGameTime(),
-                                    completed.getKey() / 1000.0,
-                                    value / 1000.0,
-                                    state.contributions.size(),
-                                    0,
-                                    true,
-                                    state.wave.periodUnits() / (double) SignalTime.UNITS_PER_TICK,
-                                    completed.getValue(),
-                                    value != state.previous));
-                if (state.cycles.isEmpty())
-                    receiver.receiveSignal(
-                            new AggregatedSignal(
-                                    level.dimension(),
-                                    pos,
-                                    level.getGameTime(),
-                                    state.wave.peak() / 1000.0,
-                                    value / 1000.0,
-                                    state.contributions.size(),
-                                    0,
-                                    true,
-                                    state.wave.periodUnits() / (double) SignalTime.UNITS_PER_TICK,
-                                    0,
-                                    value != state.previous));
-            } else if (!state.contributions.isEmpty() || value != state.previous) {
-                receiver.receiveSignal(
-                        new AggregatedSignal(
-                                level.dimension(),
-                                pos,
-                                level.getGameTime(),
-                                Math.abs(value) / 1000.0,
-                                value / 1000.0,
-                                state.contributions.size(),
-                                0,
-                                false,
-                                0,
-                                0,
-                                value != state.previous));
-            } else receiver.clearSignal();
-            if (state.contributions.isEmpty() || state.wave.isZero()) {
-                activeTargets.remove(pos);
-                if (value == 0) receiver.clearSignal();
-            }
-            state.previous = value;
-            state.cycles.clear();
-            state.slowDuringTick = !state.wave.fast() && !state.contributions.isEmpty();
+            if (state.contributions.isEmpty() && state.steps.isEmpty()) receiver.clearSignal();
+            else receiver.receiveSignal(new AggregatedSignal(level.dimension(), pos, now,
+                    Math.abs(state.previous) / (double) SignalDefinition.AMPLITUDE_SCALE,
+                    state.previous / (double) SignalDefinition.AMPLITUDE_SCALE,
+                    state.contributions.size(), List.copyOf(state.steps)));
+            state.steps.clear();
         }
-        if (level.getGameTime() % 200 == 0) {
-            history.entrySet()
-                    .removeIf(
-                            entry -> {
-                                List<SourceChange> changes = entry.getValue();
-                                int expired = 0;
-                                while (expired + 1 < changes.size()
-                                        && changes.get(expired + 1).time() < now - HISTORY_UNITS)
-                                    expired++;
-                                if (expired > 0) changes.subList(0, expired).clear();
-                                SourceChange last = changes.getLast();
-                                return last.time() < now - HISTORY_UNITS
-                                        && !(last.after() instanceof ContinuousSignalSource);
-                            });
-        }
+        if (now % 200 == 0) history.entrySet().removeIf(entry -> {
+            entry.getValue().removeIf(version -> version.end != Long.MAX_VALUE
+                    && now > version.end + (4096 + 2.0 * Math.abs(version.source.signal().amplitude()))
+                            / version.speed() + 3);
+            return entry.getValue().isEmpty();
+        });
     }
 
     private static final class ReceiverState {
-        final TreeMap<Long, Integer> pendingTimes = new TreeMap<>();
+        final BlockPos pos;
+
+        ReceiverState(BlockPos pos) {
+            this.pos = pos;
+        }
         final Set<Arrival> pending = new HashSet<>();
+        final Map<PathKey, Double> paths = new HashMap<>();
+        final Set<PathKey> closing = new HashSet<>();
         final Map<PathKey, Contribution> contributions = new HashMap<>();
-        final Map<Long, Integer> cycles = new LinkedHashMap<>();
+        final List<AggregatedSignal.Step> steps = new ArrayList<>();
         CompositeWaveform wave = new CompositeWaveform(List.of());
-        long anchor, settled, previous;
-        boolean initializing, slowDuringTick;
+        Arrival sample;
+        long previous;
 
-        ReceiverState(long now) {
-            anchor = settled = now;
-        }
-
-        Map<UUID, Map<String, Long>> pathDelays() {
-            Map<UUID, Map<String, Long>> delays = new HashMap<>();
-            contributions.forEach((key, value) -> delays
-                    .computeIfAbsent(key.source(), id -> new HashMap<>())
-                    .merge(key.path(), value.delay(), Math::max));
-            for (Arrival arrival : pending)
-                if (arrival.value() != null)
-                    delays.computeIfAbsent(arrival.key().source(), id -> new HashMap<>())
-                            .merge(arrival.key().path(), arrival.value().delay(), Math::max);
-            return delays;
-        }
-
-        void settle(long time) {
-            if (time <= settled) return;
-            if (wave.fast() && wave.peak() > 0) {
-                int period = wave.periodUnits();
-                int count =
-                        (int)
-                                (Math.floorDiv(time - anchor, period)
-                                        - Math.floorDiv(settled - anchor, period));
-                if (count > 0) cycles.merge(wave.peak(), count, Integer::sum);
-            }
-            settled = time;
-        }
-
-        void rebuild(long time) {
-            CompositeWaveform next =
-                    new CompositeWaveform(
-                            contributions.values().stream().map(Contribution::term).toList());
-            wave = next;
-            anchor = time;
-            if (!next.fast() && !contributions.isEmpty()) slowDuringTick = true;
+        void rebuild() {
+            wave = new CompositeWaveform(contributions.values().stream()
+                    .map(Contribution::term).toList());
         }
     }
 
@@ -505,12 +420,12 @@ public final class SignalRuntime implements AutoCloseable {
         loadedChunks.clear();
         machineField.clear();
         structures.close();
-        activeTargets.clear();
         receivers.clear();
         sources.clear();
         ducts.clear();
         states.clear();
         history.clear();
+        current.clear();
         arrivals.clear();
         registrations.clear();
         topologyChanges.clear();

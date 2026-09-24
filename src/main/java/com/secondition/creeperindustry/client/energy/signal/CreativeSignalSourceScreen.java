@@ -5,11 +5,16 @@ import com.secondition.creeperindustry.content.energy.signal.*;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import org.lwjgl.glfw.GLFW;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 @OnlyIn(Dist.CLIENT)
 public class CreativeSignalSourceScreen extends AbstractContainerScreen<CreativeSignalSourceMenu> {
@@ -17,19 +22,17 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
     private static final int PANEL_HEIGHT = 225;
     private static final int CONTROL_LEFT_OFFSET = 14;
     private static final int CONTROL_WIDTH = 192;
-    private static final int TYPE_BUTTON_WIDTH = 60;
+    private static final int TYPE_BUTTON_WIDTH = 93;
     private static final int TYPE_BUTTON_GAP = 6;
     private static final float HINT_SCALE = 0.8F;
 
     private Button pulseTypeButton;
     private Button continuousTypeButton;
-    private Button staticTypeButton;
     private Button emitPulseButton;
+    private Button applyFrequencyButton;
     private SignalValueSlider amplitudeSlider;
-    private SignalValueSlider stagesSlider;
-    private SignalValueSlider stageLengthSlider;
-    private Button previousPhaseButton;
-    private Button nextPhaseButton;
+    private SignalValueSlider wavelengthSlider;
+    private EditBox frequencyBox;
 
     public CreativeSignalSourceScreen(
             CreativeSignalSourceMenu menu, Inventory playerInventory, Component title) {
@@ -71,36 +74,20 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
                                         20)
                                 .build());
 
-        staticTypeButton =
-                addRenderableWidget(
-                        Button.builder(
-                                        Component.translatable(
-                                                "gui.creeper_industry.creative_signal_source.static"),
-                                        button ->
-                                                sendMenuButton(
-                                                        CreativeSignalSourceMenu.setStaticButtonId()))
-                                .bounds(controlsLeft + 2 * (TYPE_BUTTON_WIDTH + TYPE_BUTTON_GAP),
-                                        typeTop, TYPE_BUTTON_WIDTH, 20)
-                                .build());
         amplitudeSlider =
                 addRenderableWidget(
                         new SignalValueSlider(controlsLeft, typeTop + 30, CONTROL_WIDTH, 0));
-        stagesSlider =
+        wavelengthSlider =
                 addRenderableWidget(
                         new SignalValueSlider(controlsLeft, typeTop + 58, CONTROL_WIDTH, 1));
-        stageLengthSlider =
-                addRenderableWidget(
-                        new SignalValueSlider(controlsLeft, typeTop + 86, CONTROL_WIDTH, 2));
-        previousPhaseButton =
-                addRenderableWidget(
-                        Button.builder(Component.literal("−"), b -> sendMenuButton(3))
-                                .bounds(controlsLeft, typeTop + 113, 24, 20)
-                                .build());
-        nextPhaseButton =
-                addRenderableWidget(
-                        Button.builder(Component.literal("+"), b -> sendMenuButton(4))
-                                .bounds(controlsLeft + 168, typeTop + 113, 24, 20)
-                                .build());
+        frequencyBox = addRenderableWidget(new EditBox(font, controlsLeft + 75,
+                typeTop + 113, 77, 20,
+                Component.translatable("gui.creeper_industry.creative_signal_source.frequency")));
+        frequencyBox.setMaxLength(24);
+        applyFrequencyButton = addRenderableWidget(Button.builder(
+                Component.translatable("gui.creeper_industry.creative_signal_source.apply"),
+                button -> applyFrequency())
+                .bounds(controlsLeft + 156, typeTop + 113, 36, 20).build());
         emitPulseButton =
                 addRenderableWidget(
                         Button.builder(
@@ -153,22 +140,14 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
 
         CreativeSignalSourceSignalType type = menu.getSignalType();
         if (type == CreativeSignalSourceSignalType.CONTINUOUS)
-            guiGraphics.drawString(
-                    font,
-                    Component.translatable(
-                            "gui.creeper_industry.creative_signal_source.phase",
-                            menu.getPhaseSteps(),
-                            String.format(java.util.Locale.ROOT, "%.3f", menu.getPeriodTicks())),
-                    42,
-                    151,
-                    0xD5D0C6,
-                    false);
+            guiGraphics.drawString(font, Component.translatable(
+                    "gui.creeper_industry.creative_signal_source.frequency"),
+                    CONTROL_LEFT_OFFSET, 151, 0xD5D0C6, false);
         Component hint =
                 Component.translatable(
                         "gui.creeper_industry.creative_signal_source."
                                 + (type == CreativeSignalSourceSignalType.PULSE ? "pulse_hint"
-                                        : type == CreativeSignalSourceSignalType.STATIC ? "static_hint"
-                                        : "continuous_hint"));
+                                        : menu.getWavelength() <= 2 ? "zero_hint" : "continuous_hint"));
         drawScaledHint(guiGraphics, hint, CONTROL_LEFT_OFFSET, 211);
     }
 
@@ -193,21 +172,59 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
         CreativeSignalSourceSignalType type = menu.getSignalType();
         pulseTypeButton.active = type != CreativeSignalSourceSignalType.PULSE;
         continuousTypeButton.active = type != CreativeSignalSourceSignalType.CONTINUOUS;
-        staticTypeButton.active = type != CreativeSignalSourceSignalType.STATIC;
         emitPulseButton.visible = type == CreativeSignalSourceSignalType.PULSE;
         emitPulseButton.active = emitPulseButton.visible && menu.getAmplitude() != 0;
-        stagesSlider.visible = type == CreativeSignalSourceSignalType.CONTINUOUS;
-        stageLengthSlider.visible = stagesSlider.visible;
-        previousPhaseButton.visible = stagesSlider.visible;
-        nextPhaseButton.visible = stagesSlider.visible;
-        stagesSlider.active = stagesSlider.visible;
-        stageLengthSlider.active = stagesSlider.visible;
-        previousPhaseButton.active = stagesSlider.visible;
-        nextPhaseButton.active = stagesSlider.visible;
+        wavelengthSlider.visible = type == CreativeSignalSourceSignalType.CONTINUOUS;
+        wavelengthSlider.active = wavelengthSlider.visible;
+        frequencyBox.visible = wavelengthSlider.visible;
+        applyFrequencyButton.visible = wavelengthSlider.visible;
 
         amplitudeSlider.syncTo(menu.getAmplitude());
-        stagesSlider.syncTo(menu.getStages());
-        stageLengthSlider.syncTo(menu.getStageLengthIndex());
+        wavelengthSlider.syncTo(menu.getWavelength());
+        if (!frequencyBox.isFocused()) frequencyBox.setValue(
+                menu.getFrequencyNumerator() + "/" + menu.getFrequencyDenominator());
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (frequencyBox != null && frequencyBox.isFocused()
+                && (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)) {
+            applyFrequency();
+            return true;
+        }
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    private void applyFrequency() {
+        try {
+            String[] parts = frequencyBox.getValue().trim().split("/", -1);
+            if (parts.length > 2) throw new NumberFormatException();
+            BigDecimal numerator = new BigDecimal(parts[0].trim());
+            BigDecimal denominator = parts.length == 2
+                    ? new BigDecimal(parts[1].trim()) : BigDecimal.ONE;
+            if (Math.abs((long) numerator.scale()) > 24
+                    || Math.abs((long) denominator.scale()) > 24) throw new NumberFormatException();
+            BigInteger top = numerator.unscaledValue().multiply(BigInteger.TEN.pow(
+                    Math.max(0, denominator.scale() - numerator.scale())));
+            BigInteger bottom = denominator.unscaledValue().multiply(BigInteger.TEN.pow(
+                    Math.max(0, numerator.scale() - denominator.scale())));
+            if (bottom.signum() == 0) throw new NumberFormatException();
+            if (bottom.signum() < 0) {
+                top = top.negate();
+                bottom = bottom.negate();
+            }
+            BigInteger gcd = top.gcd(bottom);
+            top = top.divide(gcd);
+            bottom = bottom.divide(gcd);
+            int n = top.intValueExact(), d = bottom.intValueExact();
+            if (n < 1 || n > 32767 || d < 1 || d > 32767
+                    || n * 320L < d || n > 8L * d) throw new NumberFormatException();
+            frequencyBox.setTextColor(0xFFE0E0E0);
+            sendMenuButton(CreativeSignalSourceMenu.frequencyButtonId(n, d));
+            frequencyBox.setFocused(false);
+        } catch (ArithmeticException | IllegalArgumentException ex) {
+            frequencyBox.setTextColor(0xFFFF5555);
+        }
     }
 
     private void sendMenuButton(int buttonId) {
@@ -222,8 +239,7 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
 
         private SignalValueSlider(int x, int y, int width, int kind) {
             super(x, y, width, 20, Component.empty(), sliderValue(kind,
-                    kind == 0 ? menu.getAmplitude()
-                            : kind == 1 ? menu.getStages() : menu.getStageLengthIndex()));
+                    kind == 0 ? menu.getAmplitude() : menu.getWavelength()));
             this.kind = kind;
             updateMessage();
         }
@@ -240,13 +256,9 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
             int currentValue = valueFromSlider();
             String key = switch (kind) {
                 case 0 -> "gui.creeper_industry.creative_signal_source.amplitude";
-                case 1 -> "gui.creeper_industry.creative_signal_source.stages";
-                default -> "gui.creeper_industry.creative_signal_source.stage_length";
+                default -> "gui.creeper_industry.creative_signal_source.wavelength";
             };
-            String label = kind == 2 && currentValue < 4
-                    ? "1/" + (16 >> currentValue)
-                    : Integer.toString(kind == 2 ? currentValue - 3 : currentValue);
-            setMessage(Component.translatable(key, label));
+            setMessage(Component.translatable(key, currentValue));
         }
 
         @Override
@@ -255,16 +267,14 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
             int currentValue = valueFromSlider();
             sendMenuButton(switch (kind) {
                 case 0 -> CreativeSignalSourceMenu.amplitudeButtonId(currentValue);
-                case 1 -> CreativeSignalSourceMenu.stagesButtonId(currentValue);
-                default -> CreativeSignalSourceMenu.stageLengthButtonId(currentValue);
+                default -> CreativeSignalSourceMenu.wavelengthButtonId(currentValue);
             });
         }
 
         private int valueFromSlider() {
             return switch (kind) {
                 case 0 -> (int) Math.round(value * 128) - 64;
-                case 1 -> 2 + (int) Math.round(value * 7) * 2;
-                default -> (int) Math.round(value * (SignalTime.STAGE_LENGTH_COUNT - 1));
+                default -> 1 + (int) Math.round(value * 15);
             };
         }
     }
@@ -272,8 +282,7 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
     private static double sliderValue(int kind, int currentValue) {
         return switch (kind) {
             case 0 -> (currentValue + 64) / 128.0;
-            case 1 -> (currentValue - 2) / 14.0;
-            default -> currentValue / (double) (SignalTime.STAGE_LENGTH_COUNT - 1);
+            default -> (currentValue - 1) / 15.0;
         };
     }
 }

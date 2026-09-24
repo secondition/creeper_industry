@@ -40,12 +40,9 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
         if (id == 0) source.setSignalType(CreativeSignalSourceSignalType.PULSE);
         else if (id == 1) source.setSignalType(CreativeSignalSourceSignalType.CONTINUOUS);
         else if (id == 2) source.emitPulse();
-        else if (id == 5) source.setSignalType(CreativeSignalSourceSignalType.STATIC);
-        else if (id == 3 || id == 4) source.stepPhase(id == 3 ? -1 : 1);
         else if (id >= 100 && id <= 228) source.setAmplitude(id - 164);
-        else if (id >= 300 && id < 308) source.setStages(2 + (id - 300) * 2);
-        else if (id >= 400 && id < 400 + SignalTime.STAGE_LENGTH_COUNT)
-            source.setStageLengthIndex(id - 400);
+        else if (id >= 300 && id <= 315) source.setWavelength(id - 299);
+        else if (id >= 32769) source.setFrequency(id >>> 15, id & 32767);
         else return false;
         return true;
     }
@@ -68,33 +65,28 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
         return data.get(1);
     }
 
-    public int getStages() {
+    public int getWavelength() {
         return data.get(2);
     }
 
-    public int getStageLengthIndex() {
+    public int getFrequencyNumerator() {
         return data.get(3);
     }
 
-    public int getPhaseSteps() {
+    public int getFrequencyDenominator() {
         return data.get(4);
-    }
-
-    public double getPeriodTicks() {
-        return getStages() * SignalTime.stageUnits(Math.clamp(getStageLengthIndex(), 0,
-                SignalTime.STAGE_LENGTH_COUNT - 1)) / (double) SignalTime.UNITS_PER_TICK;
     }
 
     public static int amplitudeButtonId(int amplitude) {
         return 164 + amplitude;
     }
 
-    public static int stagesButtonId(int stages) {
-        return 300 + (stages - 2) / 2;
+    public static int wavelengthButtonId(int wavelength) {
+        return 299 + wavelength;
     }
 
-    public static int stageLengthButtonId(int index) {
-        return 400 + index;
+    public static int frequencyButtonId(int numerator, int denominator) {
+        return numerator << 15 | denominator;
     }
 
     public static int setPulseButtonId() {
@@ -107,10 +99,6 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
 
     public static int emitPulseButtonId() {
         return 2;
-    }
-
-    public static int setStaticButtonId() {
-        return 5;
     }
 
     private static Context read(Inventory inventory, RegistryFriendlyByteBuf buf) {

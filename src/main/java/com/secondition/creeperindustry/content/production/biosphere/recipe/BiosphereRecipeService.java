@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Optional;
 
 import com.secondition.creeperindustry.CIRecipeTypes;
-import com.secondition.creeperindustry.content.energy.signal.AggregatedSignal;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereType;
 
 import net.minecraft.world.item.ItemStack;
@@ -47,17 +46,6 @@ public final class BiosphereRecipeService {
                 .map(holder -> holder.value().catalyst())
                 .flatMap(Optional::stream)
                 .anyMatch(catalyst -> catalyst.ingredient().test(stack));
-    }
-
-    public static boolean hasMatchingSignal(
-            Level level,
-            BiosphereType biosphereType,
-            ItemStack template,
-            AggregatedSignal signal
-    ) {
-        return findRecipeForTemplate(level, biosphereType, template)
-                .map(holder -> holder.value().signalRequirement().matches(signal))
-                .orElse(false);
     }
 
     private static List<RecipeHolder<BiosphereCultivationRecipe>> recipesFor(Level level, BiosphereType biosphereType) {

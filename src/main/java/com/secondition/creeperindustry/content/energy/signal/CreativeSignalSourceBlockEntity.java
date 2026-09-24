@@ -20,7 +20,9 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
     public static final int MAX_AMPLITUDE = 64;
     private UUID sourceId = UUID.randomUUID();
     private CreativeSignalSourceSignalType signalType = CreativeSignalSourceSignalType.CONTINUOUS;
-    private int amplitude = 4, stages = 2, stageLengthIndex = 4, phaseSteps;
+    private int amplitude = 4, wavelength = 8, frequencyNumerator = 1, frequencyDenominator = 8;
+    private long anchorTick = -1;
+    private double phase;
     private boolean registered;
     private final ContainerData data =
             new ContainerData() {
@@ -28,9 +30,9 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
                     return switch (i) {
                         case 0 -> signalType.getSerializedId();
                         case 1 -> amplitude;
-                        case 2 -> stages;
-                        case 3 -> stageLengthIndex;
-                        case 4 -> phaseSteps;
+                        case 2 -> wavelength;
+                        case 3 -> frequencyNumerator;
+                        case 4 -> frequencyDenominator;
                         default -> 0;
                     };
                 }
@@ -39,9 +41,9 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
                     switch (i) {
                         case 0 -> signalType = CreativeSignalSourceSignalType.bySerializedId(v);
                         case 1 -> amplitude = Math.clamp(v, -64, 64);
-                        case 2 -> stages = Math.clamp(v / 2 * 2, 2, 16);
-                        case 3 -> stageLengthIndex = Math.clamp(v, 0, SignalTime.STAGE_LENGTH_COUNT - 1);
-                        case 4 -> phaseSteps = Math.floorMod(v, stages);
+                        case 2 -> wavelength = Math.clamp(v, 1, 16);
+                        case 3 -> frequencyNumerator = v;
+                        case 4 -> frequencyDenominator = v;
                     }
                 }
 
@@ -69,6 +71,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
     public void setSignalType(CreativeSignalSourceSignalType type) {
         if (type != signalType) {
             signalType = type;
+            if (type == CreativeSignalSourceSignalType.PULSE) anchorTick = -1;
             updateSource();
             setChanged();
         }
@@ -78,30 +81,31 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         value = Math.clamp(value, -64, 64);
         if (value != amplitude) {
             amplitude = value;
+            if (value == 0) anchorTick = -1;
             updateSource();
             setChanged();
         }
     }
 
-    public void setStages(int value) {
-        if (value < 2 || value > 16 || value % 2 != 0 || value == stages) return;
-        phaseSteps = Math.floorMod(Math.round((float) phaseSteps * value / stages), value);
-        stages = value;
+    public void setWavelength(int value) {
+        if (value < 1 || value > 16 || value == wavelength) return;
+        wavelength = value;
         updateSource();
         setChanged();
     }
 
-    public void setStageLengthIndex(int index) {
-        if (index < 0 || index >= SignalTime.STAGE_LENGTH_COUNT || index == stageLengthIndex)
-            return;
-        stageLengthIndex = index;
-        updateSource();
-        setChanged();
-    }
-
-    public void stepPhase(int direction) {
-        if (signalType != CreativeSignalSourceSignalType.CONTINUOUS) return;
-        phaseSteps = Math.floorMod(phaseSteps + direction, stages);
+    public void setFrequency(int numerator, int denominator) {
+        if (numerator < 1 || numerator > 32767 || denominator < 1 || denominator > 32767
+                || numerator * 320L < denominator || numerator > 8L * denominator
+                || numerator == frequencyNumerator && denominator == frequencyDenominator) return;
+        if (registered && level != null) {
+            double cycles = phase + (level.getGameTime() - anchorTick)
+                    * frequencyNumerator / (double) frequencyDenominator;
+            phase = cycles - Math.floor(cycles);
+            anchorTick = level.getGameTime();
+        }
+        frequencyNumerator = numerator;
+        frequencyDenominator = denominator;
         updateSource();
         setChanged();
     }
@@ -119,7 +123,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
                                 level.dimension(),
                                 Vec3.atCenterOf(worldPosition),
                                 level.getGameTime(),
-                                new SignalDefinition(amplitude, 0, 0, 0, SignalWaveform.STATIC)),
+                                SignalDefinition.pulse(amplitude)),
                         true);
     }
 
@@ -129,6 +133,10 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
             removeSource();
             return;
         }
+        if (anchorTick < 0) {
+            anchorTick = level.getGameTime();
+            phase = 0;
+        }
         SignalRuntimeAccess.get(level)
                 .upsert(
                         level,
@@ -137,14 +145,9 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
                                 level.dimension(),
                                 Vec3.atCenterOf(worldPosition),
                                 level.getGameTime(),
-                                signalType == CreativeSignalSourceSignalType.STATIC
-                                        ? new SignalDefinition(amplitude, 0, 0, 0, SignalWaveform.STATIC)
-                                        : new SignalDefinition(
-                                                amplitude,
-                                                stages,
-                                                SignalTime.stageUnits(stageLengthIndex),
-                                                phaseSteps,
-                                                SignalWaveform.TRIANGLE)));
+                                new SignalDefinition(amplitude, wavelength, frequencyNumerator,
+                                        frequencyDenominator, anchorTick, phase,
+                                        SignalWaveform.TRIANGLE)));
         registered = true;
     }
 
@@ -185,7 +188,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
     @Override
     public void writeClientSideData(AbstractContainerMenu menu, RegistryFriendlyByteBuf buf) {
         buf.writeBlockPos(worldPosition);
-        for (int i = 0; i < 5; i++) buf.writeVarInt(data.get(i));
+        for (int i = 0; i < data.getCount(); i++) buf.writeVarInt(data.get(i));
     }
 
     @Override
@@ -194,9 +197,11 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         tag.putUUID("continuous_source_id", sourceId);
         tag.putString("signal_type", signalType.getSerializedName());
         tag.putInt("amplitude", amplitude);
-        tag.putInt("stages", stages);
-        tag.putInt("stage_length_index", stageLengthIndex);
-        tag.putInt("phase_steps", phaseSteps);
+        tag.putInt("wavelength", wavelength);
+        tag.putInt("frequency_numerator", frequencyNumerator);
+        tag.putInt("frequency_denominator", frequencyDenominator);
+        tag.putLong("anchor_tick", anchorTick);
+        tag.putDouble("phase", phase);
     }
 
     @Override
@@ -205,10 +210,17 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         if (tag.hasUUID("continuous_source_id")) sourceId = tag.getUUID("continuous_source_id");
         signalType = CreativeSignalSourceSignalType.bySerializedName(tag.getString("signal_type"));
         amplitude = tag.contains("amplitude") ? Math.clamp(tag.getInt("amplitude"), -64, 64) : 4;
-        stages = tag.contains("stages") ? Math.clamp(tag.getInt("stages") / 2 * 2, 2, 16) : 2;
-        stageLengthIndex = tag.contains("stage_length_index")
-                ? Math.clamp(tag.getInt("stage_length_index"), 0, SignalTime.STAGE_LENGTH_COUNT - 1)
-                : 4;
-        phaseSteps = Math.floorMod(tag.getInt("phase_steps"), stages);
+        wavelength = tag.contains("wavelength") ? Math.clamp(tag.getInt("wavelength"), 1, 16) : 8;
+        int numerator = tag.contains("frequency_numerator") ? tag.getInt("frequency_numerator") : 1;
+        int denominator = tag.contains("frequency_denominator") ? tag.getInt("frequency_denominator") : 8;
+        if (numerator >= 1 && numerator <= 32767 && denominator >= 1 && denominator <= 32767
+                && numerator * 320L >= denominator && numerator <= 8L * denominator) {
+            frequencyNumerator = numerator;
+            frequencyDenominator = denominator;
+        }
+        anchorTick = tag.contains("anchor_tick") ? tag.getLong("anchor_tick") : -1;
+        double savedPhase = tag.getDouble("phase");
+        phase = Double.isFinite(savedPhase) && savedPhase >= 0 && savedPhase < 1
+                ? savedPhase : 0;
     }
 }

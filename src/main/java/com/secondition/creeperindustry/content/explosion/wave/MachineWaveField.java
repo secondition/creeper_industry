@@ -14,6 +14,7 @@ import java.util.*;
 /** Analytic traveling periodic fields; no per-crest server objects or explosion instances. */
 public final class MachineWaveField {
     private static final class Version {
+        final UUID id = UUID.randomUUID();
         final ContinuousSignalSource source;
         long end = Long.MAX_VALUE;
 
@@ -25,21 +26,23 @@ public final class MachineWaveField {
             var p = source.position();
             var s = source.signal();
             return new PeriodicWavePacket(
-                    source.id(),
+                    id,
                     source.gameTime(),
                     end,
                     p.x,
                     p.y,
                     p.z,
                     s.amplitude(),
-                    s.periodUnits(),
-                    s.stages(),
-                    s.phaseUnits());
+                    s.wavelength(),
+                    s.frequencyNumerator(),
+                    s.frequencyDenominator(),
+                    s.anchorTick(),
+                    s.phase());
         }
     }
 
     private final List<Version> versions = new ArrayList<>();
-    private final Map<UUID, Set<String>> seen = new HashMap<>();
+    private final Map<UUID, Set<UUID>> seen = new HashMap<>();
 
     public void change(ServerLevel level, UUID id, ContinuousSignalSource next) {
         for (Version version : versions)
@@ -54,18 +57,14 @@ public final class MachineWaveField {
         }
     }
 
-    private static String key(Version v) {
-        return v.source.id() + ":" + v.source.gameTime();
-    }
-
     private void send(ServerLevel level, Version version) {
         for (ServerPlayer player : level.players()) {
-            Set<String> known = seen.computeIfAbsent(player.getUUID(), k -> new HashSet<>());
-            if (known.contains(key(version))
+            Set<UUID> known = seen.computeIfAbsent(player.getUUID(), k -> new HashSet<>());
+            if (known.contains(version.id)
                     || player.position().distanceTo(version.source.position())
                             < Math.abs(version.source.signal().amplitude()) + 128) {
                 PacketDistributor.sendToPlayer(player, version.packet());
-                known.add(key(version));
+                known.add(version.id);
             }
         }
     }
@@ -75,23 +74,22 @@ public final class MachineWaveField {
         versions.removeIf(
                 v ->
                         v.end != Long.MAX_VALUE
-                                && time > v.end + Math.abs(v.source.signal().amplitude()) + 2);
+                                && time > v.end + Math.abs(v.source.signal().amplitude())
+                                        / v.source.signal().speed() + 2);
         if (time % 20 == 0) {
             Set<UUID> players = new HashSet<>();
-            Set<String> live =
-                    versions.stream()
-                            .map(MachineWaveField::key)
-                            .collect(java.util.stream.Collectors.toSet());
+            Set<UUID> live = versions.stream().map(v -> v.id)
+                    .collect(java.util.stream.Collectors.toSet());
             for (ServerPlayer player : level.players()) {
                 players.add(player.getUUID());
-                Set<String> known = seen.computeIfAbsent(player.getUUID(), k -> new HashSet<>());
+                Set<UUID> known = seen.computeIfAbsent(player.getUUID(), k -> new HashSet<>());
                 known.retainAll(live);
                 for (Version version : versions) {
                     boolean nearby =
                             player.position().distanceTo(version.source.position())
                                     < Math.abs(version.source.signal().amplitude()) + 128;
                     // Subscriptions last until the version ends, including while the player is far away.
-                    if (nearby && (known.add(key(version)) || time % 100 == 0))
+                    if (nearby && (known.add(version.id) || time % 100 == 0))
                         PacketDistributor.sendToPlayer(player, version.packet());
                 }
             }
@@ -101,7 +99,7 @@ public final class MachineWaveField {
         for (Version version : versions) {
             var source = version.source;
             var signal = source.signal();
-            if (signal.periodUnits() > 0 && signal.periodUnits() <= SignalTime.UNITS_PER_TICK)
+            if (signal.frequency() >= 1)
                 continue;
             double radius = Math.abs(signal.amplitude());
             Vec3 origin = source.position();
@@ -114,20 +112,14 @@ public final class MachineWaveField {
                 double distance = point.distanceTo(origin);
                 double magnitude = Math.max(0, radius - distance);
                 if (magnitude <= 0) continue;
-                long sourceTime =
-                        time * SignalTime.UNITS_PER_TICK
-                                - SignalTime.travelUnits(
-                                        distance,
-                                        WavePropagationProfile.DEFAULT
-                                                .propagationSpeedBlocksPerTick());
-                if (sourceTime < source.gameTime() * SignalTime.UNITS_PER_TICK
-                        || (version.end != Long.MAX_VALUE
-                                && sourceTime >= version.end * SignalTime.UNITS_PER_TICK))
+                double sourceTime = time - distance / signal.speed();
+                if (sourceTime < source.gameTime()
+                        || sourceTime >= version.end)
                     continue;
                 double value = signal.sample(
                                 Math.round(Math.signum(signal.amplitude())
-                                        * magnitude * SignalTime.AMPLITUDE_SCALE), sourceTime)
-                        / (double) SignalTime.AMPLITUDE_SCALE;
+                                        * magnitude * SignalDefinition.AMPLITUDE_SCALE), sourceTime)
+                        / (double) SignalDefinition.AMPLITUDE_SCALE;
                 Vec3 direction = point.subtract(origin).normalize();
                 forces.merge(entity, direction.scale(value), Vec3::add);
             }

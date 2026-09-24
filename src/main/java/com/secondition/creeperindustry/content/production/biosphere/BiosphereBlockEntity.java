@@ -356,7 +356,7 @@ public class BiosphereBlockEntity extends BlockEntity
                         recipe.processingUnits()
                                 / (structureSize == 7 ? 4 : structureSize == 5 ? 2 : 1));
         processingProgress = Math.min(processingProgress, requiredUnits - 1);
-        int earned = signal.processingUnits(recipe.signalRequirement().minimumAmplitude());
+        int earned = signal.processingUnits(recipe.signalRequirement().startAmplitude());
         ItemStack result = recipe.selectedOutput(selectedOutputIndex);
         if (earned <= 0 || !canProcessSignalTrigger(recipe, result)) return;
         ItemStack output = items.get(OUTPUT_SLOT);

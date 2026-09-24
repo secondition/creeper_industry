@@ -13,7 +13,7 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
     private double currentAmplitude;
     private double currentInstantaneousValue;
     private double lastNonZeroAmplitude;
-    private long nextArrival = Long.MAX_VALUE;
+    private double nextArrival = Double.POSITIVE_INFINITY;
 
     public SignalUpdateDetectorBlockEntity(BlockPos pos, BlockState blockState) {
         super(CIBlockEntityTypes.SIGNAL_UPDATE_DETECTOR.get(), pos, blockState);
@@ -21,13 +21,17 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
 
     @Override
     public void receiveSignal(AggregatedSignal signal) {
+        double last = lastNonZeroAmplitude;
+        for (var step : signal.steps())
+            if (step.after() != 0) lastNonZeroAmplitude = Math.abs(step.after());
         if (signal.amplitude() <= 0) {
             clearSignal();
+            if (last != lastNonZeroAmplitude) setChanged();
             return;
         }
-        boolean changed =
-                currentAmplitude != signal.amplitude()
-                        || currentInstantaneousValue != signal.instantaneousValue();
+        boolean changed = last != lastNonZeroAmplitude
+                || currentAmplitude != signal.amplitude()
+                || currentInstantaneousValue != signal.instantaneousValue();
         currentAmplitude = signal.amplitude();
         currentInstantaneousValue = signal.instantaneousValue();
         if (currentAmplitude > 0) {
@@ -83,15 +87,13 @@ public class SignalUpdateDetectorBlockEntity extends BlockEntity implements Sign
     }
 
     @Override
-    public void scheduleSignalChange(long arrivalUnits) {
-        nextArrival = arrivalUnits;
+    public void scheduleSignalChange(double arrivalTick) {
+        nextArrival = arrivalTick;
     }
 
     public double pendingDelay() {
-        return nextArrival == Long.MAX_VALUE || level == null
-                ? -1
-                : Math.max(0, nextArrival - level.getGameTime() * SignalTime.UNITS_PER_TICK)
-                        / (double) SignalTime.UNITS_PER_TICK;
+        return !Double.isFinite(nextArrival) || level == null
+                ? -1 : Math.max(0, nextArrival - level.getGameTime());
     }
 
     @Override
