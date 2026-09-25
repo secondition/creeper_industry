@@ -41,7 +41,6 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
         else if (id == 1) source.setSignalType(CreativeSignalSourceSignalType.CONTINUOUS);
         else if (id == 2) source.emitPulse();
         else if (id >= 100 && id <= 228) source.setAmplitude(id - 164);
-        else if (id >= 300 && id <= 315) source.setWavelength(id - 299);
         else if (id >= 32769) source.setFrequency(id >>> 15, id & 32767);
         else return false;
         return true;
@@ -79,10 +78,6 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
 
     public static int amplitudeButtonId(int amplitude) {
         return 164 + amplitude;
-    }
-
-    public static int wavelengthButtonId(int wavelength) {
-        return 299 + wavelength;
     }
 
     public static int frequencyButtonId(int numerator, int denominator) {

@@ -1,6 +1,6 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
-/** Parameters of a sampled traveling wave. Phase is measured in cycles at the anchor tick. */
+/** Parameters of a traveling wave. Phase is measured in cycles at the anchor tick. */
 public record SignalDefinition(
         int amplitude,
         int wavelength,
@@ -18,11 +18,8 @@ public record SignalDefinition(
             if (wavelength != 0 || frequencyNumerator != 0 || frequencyDenominator != 0)
                 throw new IllegalArgumentException("Pulse has no cycle");
         } else if (waveform != SignalWaveform.TRIANGLE
-                || wavelength < 1 || wavelength > 16
-                || frequencyNumerator < 1 || frequencyNumerator > 32767
-                || frequencyDenominator < 1 || frequencyDenominator > 32767
-                || frequencyNumerator * 320L < frequencyDenominator
-                || frequencyNumerator > 8L * frequencyDenominator
+                || !validFrequency(frequencyNumerator, frequencyDenominator)
+                || wavelength != (frequencyNumerator == 1 ? frequencyDenominator : 0)
                 || !Double.isFinite(phase) || phase < 0 || phase >= 1) {
             throw new IllegalArgumentException("Invalid wave parameters");
         }
@@ -32,12 +29,17 @@ public record SignalDefinition(
         return new SignalDefinition(amplitude, 0, 0, 0, 0, 0, SignalWaveform.PULSE);
     }
 
+    public static boolean validFrequency(int numerator, int denominator) {
+        return numerator == 1 && denominator >= 1 && denominator <= 320
+                || denominator == 1 && numerator >= 2 && numerator <= 8;
+    }
+
     public double frequency() {
         return frequencyNumerator / (double) frequencyDenominator;
     }
 
     public double speed() {
-        return wavelength * frequency();
+        return 1;
     }
 
     public double cycle(double emissionTime) {
@@ -46,12 +48,11 @@ public record SignalDefinition(
 
     public long sample(long peak, double emissionTime) {
         if (waveform == SignalWaveform.PULSE) return peak;
-        long window = (long) Math.floor(cycle(emissionTime) * wavelength);
-        return Math.round(peak * SignalWaveform.average(wavelength, (int) Math.floorMod(window, wavelength)));
+        return Math.round(peak * SignalWaveform.value(cycle(emissionTime)));
     }
 
-    public double nextWindow(double emissionTime) {
-        long window = (long) Math.floor(cycle(emissionTime) * wavelength + 1e-9);
-        return anchorTick + ((window + 1.0) / wavelength - phase) / frequency();
+    public double nextBend(double emissionTime) {
+        double quarter = Math.floor(cycle(emissionTime) * 4 + 1e-9) + 1;
+        return anchorTick + (quarter / 4 - phase) / frequency();
     }
 }

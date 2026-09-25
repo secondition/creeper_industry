@@ -13,9 +13,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 @OnlyIn(Dist.CLIENT)
 public class CreativeSignalSourceScreen extends AbstractContainerScreen<CreativeSignalSourceMenu> {
     private static final int PANEL_WIDTH = 220;
@@ -31,7 +28,6 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
     private Button emitPulseButton;
     private Button applyFrequencyButton;
     private SignalValueSlider amplitudeSlider;
-    private SignalValueSlider wavelengthSlider;
     private EditBox frequencyBox;
 
     public CreativeSignalSourceScreen(
@@ -76,10 +72,7 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
 
         amplitudeSlider =
                 addRenderableWidget(
-                        new SignalValueSlider(controlsLeft, typeTop + 30, CONTROL_WIDTH, 0));
-        wavelengthSlider =
-                addRenderableWidget(
-                        new SignalValueSlider(controlsLeft, typeTop + 58, CONTROL_WIDTH, 1));
+                        new SignalValueSlider(controlsLeft, typeTop + 30, CONTROL_WIDTH));
         frequencyBox = addRenderableWidget(new EditBox(font, controlsLeft + 75,
                 typeTop + 113, 77, 20,
                 Component.translatable("gui.creeper_industry.creative_signal_source.frequency")));
@@ -139,15 +132,21 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
                 false);
 
         CreativeSignalSourceSignalType type = menu.getSignalType();
-        if (type == CreativeSignalSourceSignalType.CONTINUOUS)
+        if (type == CreativeSignalSourceSignalType.CONTINUOUS) {
+            guiGraphics.drawString(font, Component.translatable(
+                    "gui.creeper_industry.creative_signal_source.wavelength",
+                    menu.getWavelength() == 0
+                            ? "1/" + menu.getFrequencyNumerator() : menu.getWavelength()),
+                    CONTROL_LEFT_OFFSET, 125, 0xD5D0C6, false);
             guiGraphics.drawString(font, Component.translatable(
                     "gui.creeper_industry.creative_signal_source.frequency"),
                     CONTROL_LEFT_OFFSET, 151, 0xD5D0C6, false);
+        }
         Component hint =
                 Component.translatable(
                         "gui.creeper_industry.creative_signal_source."
                                 + (type == CreativeSignalSourceSignalType.PULSE ? "pulse_hint"
-                                        : menu.getWavelength() <= 2 ? "zero_hint" : "continuous_hint"));
+                                        : "continuous_hint"));
         drawScaledHint(guiGraphics, hint, CONTROL_LEFT_OFFSET, 211);
     }
 
@@ -174,13 +173,10 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
         continuousTypeButton.active = type != CreativeSignalSourceSignalType.CONTINUOUS;
         emitPulseButton.visible = type == CreativeSignalSourceSignalType.PULSE;
         emitPulseButton.active = emitPulseButton.visible && menu.getAmplitude() != 0;
-        wavelengthSlider.visible = type == CreativeSignalSourceSignalType.CONTINUOUS;
-        wavelengthSlider.active = wavelengthSlider.visible;
-        frequencyBox.visible = wavelengthSlider.visible;
-        applyFrequencyButton.visible = wavelengthSlider.visible;
+        frequencyBox.visible = type == CreativeSignalSourceSignalType.CONTINUOUS;
+        applyFrequencyButton.visible = frequencyBox.visible;
 
         amplitudeSlider.syncTo(menu.getAmplitude());
-        wavelengthSlider.syncTo(menu.getWavelength());
         if (!frequencyBox.isFocused()) frequencyBox.setValue(
                 menu.getFrequencyNumerator() + "/" + menu.getFrequencyDenominator());
     }
@@ -197,28 +193,10 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
 
     private void applyFrequency() {
         try {
-            String[] parts = frequencyBox.getValue().trim().split("/", -1);
-            if (parts.length > 2) throw new NumberFormatException();
-            BigDecimal numerator = new BigDecimal(parts[0].trim());
-            BigDecimal denominator = parts.length == 2
-                    ? new BigDecimal(parts[1].trim()) : BigDecimal.ONE;
-            if (Math.abs((long) numerator.scale()) > 24
-                    || Math.abs((long) denominator.scale()) > 24) throw new NumberFormatException();
-            BigInteger top = numerator.unscaledValue().multiply(BigInteger.TEN.pow(
-                    Math.max(0, denominator.scale() - numerator.scale())));
-            BigInteger bottom = denominator.unscaledValue().multiply(BigInteger.TEN.pow(
-                    Math.max(0, numerator.scale() - denominator.scale())));
-            if (bottom.signum() == 0) throw new NumberFormatException();
-            if (bottom.signum() < 0) {
-                top = top.negate();
-                bottom = bottom.negate();
-            }
-            BigInteger gcd = top.gcd(bottom);
-            top = top.divide(gcd);
-            bottom = bottom.divide(gcd);
-            int n = top.intValueExact(), d = bottom.intValueExact();
-            if (n < 1 || n > 32767 || d < 1 || d > 32767
-                    || n * 320L < d || n > 8L * d) throw new NumberFormatException();
+            String value = frequencyBox.getValue().trim();
+            int n = value.startsWith("1/") ? 1 : Integer.parseInt(value);
+            int d = value.startsWith("1/") ? Integer.parseInt(value.substring(2)) : 1;
+            if (!SignalDefinition.validFrequency(n, d)) throw new NumberFormatException();
             frequencyBox.setTextColor(0xFFE0E0E0);
             sendMenuButton(CreativeSignalSourceMenu.frequencyButtonId(n, d));
             frequencyBox.setFocused(false);
@@ -234,55 +212,38 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
     }
 
     private final class SignalValueSlider extends AbstractSliderButton {
-        private final int kind;
         private boolean syncing;
 
-        private SignalValueSlider(int x, int y, int width, int kind) {
-            super(x, y, width, 20, Component.empty(), sliderValue(kind,
-                    kind == 0 ? menu.getAmplitude() : menu.getWavelength()));
-            this.kind = kind;
+        private SignalValueSlider(int x, int y, int width) {
+            super(x, y, width, 20, Component.empty(), sliderValue(menu.getAmplitude()));
             updateMessage();
         }
 
         private void syncTo(int currentValue) {
             syncing = true;
-            value = sliderValue(kind, currentValue);
+            value = sliderValue(currentValue);
             updateMessage();
             syncing = false;
         }
 
         @Override
         protected void updateMessage() {
-            int currentValue = valueFromSlider();
-            String key = switch (kind) {
-                case 0 -> "gui.creeper_industry.creative_signal_source.amplitude";
-                default -> "gui.creeper_industry.creative_signal_source.wavelength";
-            };
-            setMessage(Component.translatable(key, currentValue));
+            setMessage(Component.translatable(
+                    "gui.creeper_industry.creative_signal_source.amplitude", valueFromSlider()));
         }
 
         @Override
         protected void applyValue() {
             if (syncing) return;
-            int currentValue = valueFromSlider();
-            sendMenuButton(switch (kind) {
-                case 0 -> CreativeSignalSourceMenu.amplitudeButtonId(currentValue);
-                default -> CreativeSignalSourceMenu.wavelengthButtonId(currentValue);
-            });
+            sendMenuButton(CreativeSignalSourceMenu.amplitudeButtonId(valueFromSlider()));
         }
 
         private int valueFromSlider() {
-            return switch (kind) {
-                case 0 -> (int) Math.round(value * 128) - 64;
-                default -> 1 + (int) Math.round(value * 15);
-            };
+            return (int) Math.round(value * 128) - 64;
         }
     }
 
-    private static double sliderValue(int kind, int currentValue) {
-        return switch (kind) {
-            case 0 -> (currentValue + 64) / 128.0;
-            default -> (currentValue - 1) / 15.0;
-        };
+    private static double sliderValue(int currentValue) {
+        return (currentValue + 64) / 128.0;
     }
 }

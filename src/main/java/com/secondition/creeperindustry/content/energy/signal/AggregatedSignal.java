@@ -14,10 +14,11 @@ public record AggregatedSignal(
         double instantaneousValue,
         int contributionCount,
         List<Step> steps) {
-    public record Step(double before, double after) {
+    public record Step(double before, double after, boolean continuous) {
         public boolean risesPast(int threshold) {
-            return Math.abs(after) > Math.abs(before)
-                    && (threshold > 0 ? after >= threshold : after <= threshold);
+            return Math.abs(after) >= threshold
+                    && (Math.abs(before) < threshold
+                            || continuous && Math.signum(before) != Math.signum(after));
         }
     }
 

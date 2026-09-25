@@ -219,8 +219,6 @@ public final class SignalRuntime implements AutoCloseable {
             Version version, boolean replay) {
         if (version.end <= version.source.gameTime()) return;
         for (var route : routes(level, version.source, pos).values()) {
-            if (version.source instanceof ContinuousSignalSource
-                    && version.source.signal().wavelength() <= 2) continue;
             Contribution base = contribution(version, route, 0);
             if (base.term().amplitude() == 0) continue;
             double start = version.source.gameTime() + base.delay();
@@ -276,8 +274,8 @@ public final class SignalRuntime implements AutoCloseable {
             state.pending.remove(state.sample);
             state.sample = null;
         }
-        double next = state.wave.nextChange(from + 1e-7);
-        if (!Double.isFinite(next)) return;
+        if (state.wave.isZero()) return;
+        double next = Math.min(state.wave.nextChange(from + 1e-7), Math.floor(from + 1e-7) + 1);
         Arrival arrival = new Arrival(next, sequence++, pos, state, null, null, true);
         arrivals.add(arrival);
         state.pending.add(arrival);
@@ -298,8 +296,7 @@ public final class SignalRuntime implements AutoCloseable {
             }
             for (var route : next.values()) {
                 Contribution base = contribution(version, route, 0);
-                if (base.term().amplitude() == 0 || version.source.signal().wavelength() <= 2)
-                    continue;
+                if (base.term().amplitude() == 0) continue;
                 PathKey key = new PathKey(version.source.id(), version.id, route.id(), sequence++);
                 state.paths.put(key, base.delay());
                 queue(level, now + base.delay(), pos, state, key, base, false);
@@ -325,6 +322,7 @@ public final class SignalRuntime implements AutoCloseable {
                 for (Version version : versions) scheduleVersion(level, state, pos, version, true);
             state.rebuild();
             state.previous = state.wave.valueAt(now + 1e-7);
+            state.previousSlow = state.slowWave.valueAt(now + 1e-7);
             nextSample(level, pos, state, now);
             touched.add(state);
         }
@@ -346,6 +344,7 @@ public final class SignalRuntime implements AutoCloseable {
             for (var entry : batch.entrySet()) {
                 ReceiverState state = entry.getKey();
                 long before = state.previous;
+                long beforeSlow = state.previousSlow;
                 boolean changed = false;
                 for (Arrival arrival : entry.getValue()) {
                     if (arrival.sample()) {
@@ -359,15 +358,22 @@ public final class SignalRuntime implements AutoCloseable {
                     } else state.contributions.put(arrival.key(), arrival.value());
                     changed = true;
                 }
-                if (changed) state.rebuild();
+                if (changed) {
+                    long beforeArrival = state.wave.valueAt(at - 1e-7);
+                    long beforeSlowArrival = state.slowWave.valueAt(at - 1e-7);
+                    recordStep(state.steps, before, beforeArrival, true);
+                    recordStep(state.slowSteps, beforeSlow, beforeSlowArrival, true);
+                    before = beforeArrival;
+                    beforeSlow = beforeSlowArrival;
+                    state.rebuild();
+                }
                 long after = state.wave.valueAt(at + 1e-7);
-                if (before != after) {
-                    state.steps.add(new AggregatedSignal.Step(before /
-                            (double) SignalDefinition.AMPLITUDE_SCALE,
-                            after / (double) SignalDefinition.AMPLITUDE_SCALE));
-                    state.previous = after;
-                    touched.add(state);
-                } else if (changed) touched.add(state);
+                long afterSlow = state.slowWave.valueAt(at + 1e-7);
+                if (before != after || beforeSlow != afterSlow || changed) touched.add(state);
+                recordStep(state.steps, before, after, !changed);
+                recordStep(state.slowSteps, beforeSlow, afterSlow, !changed);
+                state.previous = after;
+                state.previousSlow = afterSlow;
                 nextSample(level, state.pos, state, at);
                 notifyPending(level, state.pos, state);
             }
@@ -379,12 +385,16 @@ public final class SignalRuntime implements AutoCloseable {
                 unregisterReceiver(pos);
                 continue;
             }
-            if (state.contributions.isEmpty() && state.steps.isEmpty()) receiver.clearSignal();
+            boolean slow = receiver.slowOnly();
+            long value = slow ? state.previousSlow : state.previous;
+            List<AggregatedSignal.Step> steps = slow ? state.slowSteps : state.steps;
+            if (value == 0 && steps.isEmpty() && state.contributions.isEmpty()) receiver.clearSignal();
             else receiver.receiveSignal(new AggregatedSignal(level.dimension(), pos, now,
-                    Math.abs(state.previous) / (double) SignalDefinition.AMPLITUDE_SCALE,
-                    state.previous / (double) SignalDefinition.AMPLITUDE_SCALE,
-                    state.contributions.size(), List.copyOf(state.steps)));
+                    Math.abs(value) / (double) SignalDefinition.AMPLITUDE_SCALE,
+                    value / (double) SignalDefinition.AMPLITUDE_SCALE,
+                    state.contributions.size(), List.copyOf(steps)));
             state.steps.clear();
+            state.slowSteps.clear();
         }
         if (now % 200 == 0) history.entrySet().removeIf(entry -> {
             entry.getValue().removeIf(version -> version.end != Long.MAX_VALUE
@@ -392,6 +402,13 @@ public final class SignalRuntime implements AutoCloseable {
                             / version.speed() + 3);
             return entry.getValue().isEmpty();
         });
+    }
+
+    private static void recordStep(List<AggregatedSignal.Step> steps,
+            long before, long after, boolean continuous) {
+        if (before != after) steps.add(new AggregatedSignal.Step(
+                before / (double) SignalDefinition.AMPLITUDE_SCALE,
+                after / (double) SignalDefinition.AMPLITUDE_SCALE, continuous));
     }
 
     private static final class ReceiverState {
@@ -405,13 +422,17 @@ public final class SignalRuntime implements AutoCloseable {
         final Set<PathKey> closing = new HashSet<>();
         final Map<PathKey, Contribution> contributions = new HashMap<>();
         final List<AggregatedSignal.Step> steps = new ArrayList<>();
+        final List<AggregatedSignal.Step> slowSteps = new ArrayList<>();
         CompositeWaveform wave = new CompositeWaveform(List.of());
+        CompositeWaveform slowWave = wave;
         Arrival sample;
         long previous;
+        long previousSlow;
 
         void rebuild() {
             wave = new CompositeWaveform(contributions.values().stream()
                     .map(Contribution::term).toList());
+            slowWave = wave.slow();
         }
     }
 

@@ -12,7 +12,7 @@ public final class CompositeWaveform {
 
         public double nextChange(double time) {
             return signal.waveform() == SignalWaveform.TRIANGLE
-                    ? signal.nextWindow(time - delay) + delay : Double.POSITIVE_INFINITY;
+                    ? signal.nextBend(time - delay) + delay : Double.POSITIVE_INFINITY;
         }
     }
 
@@ -24,6 +24,12 @@ public final class CompositeWaveform {
 
     public boolean isZero() {
         return terms.isEmpty();
+    }
+
+    public CompositeWaveform slow() {
+        return new CompositeWaveform(terms.stream().filter(term ->
+                term.signal().waveform() == SignalWaveform.PULSE
+                        || term.signal().frequency() <= 1).toList());
     }
 
     public long valueAt(double time) {

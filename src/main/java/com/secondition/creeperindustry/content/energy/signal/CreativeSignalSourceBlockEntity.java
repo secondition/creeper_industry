@@ -41,7 +41,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
                     switch (i) {
                         case 0 -> signalType = CreativeSignalSourceSignalType.bySerializedId(v);
                         case 1 -> amplitude = Math.clamp(v, -64, 64);
-                        case 2 -> wavelength = Math.clamp(v, 1, 16);
+                        case 2 -> wavelength = v;
                         case 3 -> frequencyNumerator = v;
                         case 4 -> frequencyDenominator = v;
                     }
@@ -87,16 +87,8 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         }
     }
 
-    public void setWavelength(int value) {
-        if (value < 1 || value > 16 || value == wavelength) return;
-        wavelength = value;
-        updateSource();
-        setChanged();
-    }
-
     public void setFrequency(int numerator, int denominator) {
-        if (numerator < 1 || numerator > 32767 || denominator < 1 || denominator > 32767
-                || numerator * 320L < denominator || numerator > 8L * denominator
+        if (!SignalDefinition.validFrequency(numerator, denominator)
                 || numerator == frequencyNumerator && denominator == frequencyDenominator) return;
         if (registered && level != null) {
             double cycles = phase + (level.getGameTime() - anchorTick)
@@ -106,6 +98,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         }
         frequencyNumerator = numerator;
         frequencyDenominator = denominator;
+        wavelength = numerator == 1 ? denominator : 0;
         updateSource();
         setChanged();
     }
@@ -197,7 +190,6 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         tag.putUUID("continuous_source_id", sourceId);
         tag.putString("signal_type", signalType.getSerializedName());
         tag.putInt("amplitude", amplitude);
-        tag.putInt("wavelength", wavelength);
         tag.putInt("frequency_numerator", frequencyNumerator);
         tag.putInt("frequency_denominator", frequencyDenominator);
         tag.putLong("anchor_tick", anchorTick);
@@ -210,13 +202,12 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         if (tag.hasUUID("continuous_source_id")) sourceId = tag.getUUID("continuous_source_id");
         signalType = CreativeSignalSourceSignalType.bySerializedName(tag.getString("signal_type"));
         amplitude = tag.contains("amplitude") ? Math.clamp(tag.getInt("amplitude"), -64, 64) : 4;
-        wavelength = tag.contains("wavelength") ? Math.clamp(tag.getInt("wavelength"), 1, 16) : 8;
         int numerator = tag.contains("frequency_numerator") ? tag.getInt("frequency_numerator") : 1;
         int denominator = tag.contains("frequency_denominator") ? tag.getInt("frequency_denominator") : 8;
-        if (numerator >= 1 && numerator <= 32767 && denominator >= 1 && denominator <= 32767
-                && numerator * 320L >= denominator && numerator <= 8L * denominator) {
+        if (SignalDefinition.validFrequency(numerator, denominator)) {
             frequencyNumerator = numerator;
             frequencyDenominator = denominator;
+            wavelength = numerator == 1 ? denominator : 0;
         }
         anchorTick = tag.contains("anchor_tick") ? tag.getLong("anchor_tick") : -1;
         double savedPhase = tag.getDouble("phase");

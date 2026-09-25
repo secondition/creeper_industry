@@ -25,6 +25,11 @@ public final class WaveReceiverBlockEntity extends BlockEntity implements Signal
         if (owner.equals(controller)) controller = null;
     }
 
+    @Override
+    public boolean slowOnly() {
+        return true;
+    }
+
     public void receiveSignal(AggregatedSignal signal) {
         if (level != null
                 && controller != null
