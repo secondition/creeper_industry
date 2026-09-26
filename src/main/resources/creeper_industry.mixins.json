@@ -2,7 +2,7 @@
   "required": true,
   "package": "com.secondition.creeperindustry.mixin",
   "compatibilityLevel": "JAVA_21",
-  "mixins": [],
+  "mixins": ["MinecraftServerMixin"],
   "injectors": {
     "defaultRequire": 1
   },

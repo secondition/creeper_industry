@@ -7,6 +7,7 @@ import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncher
 import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerBlockEntity;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereBlockEntity;
 import com.secondition.creeperindustry.content.production.printer.ThreeDPrinterBlockEntity;
+import com.secondition.creeperindustry.content.snapshot.SnapshotTableBlockEntity;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -85,6 +86,9 @@ public class CIBlockEntityTypes {
                                             ThreeDPrinterBlockEntity::new,
                                             CIBlocks.THREE_D_PRINTER.get())
                                     .build(null));
+    public static final Supplier<BlockEntityType<SnapshotTableBlockEntity>> SNAPSHOT_TABLE =
+            BLOCK_ENTITY_TYPES.register("snapshot_table", () -> BlockEntityType.Builder.of(
+                    SnapshotTableBlockEntity::new, CIBlocks.SNAPSHOT_TABLE.get()).build(null));
     public static final Supplier<BlockEntityType<RocketLauncherBlockEntity>> ROCKET_LAUNCHER =
             BLOCK_ENTITY_TYPES.register(
                     "rocket_launcher",

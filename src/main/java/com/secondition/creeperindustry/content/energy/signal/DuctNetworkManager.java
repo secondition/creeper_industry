@@ -50,13 +50,13 @@ public class DuctNetworkManager {
         List<Route> cached = routeCache.get(query);
         if (cached != null) return cached;
         java.util.ArrayList<Route> result = new java.util.ArrayList<>();
-        double direct = source.distanceTo(Vec3.atCenterOf(target));
+        double direct = manhattanDistance(source, Vec3.atCenterOf(target));
         if (direct < amplitude) result.add(new Route("air", direct, direct));
         for (DuctNetwork network : findEnterableNetworks(level, source, amplitude)) {
             Route best = null;
             Set<BlockPos> positions = new HashSet<>(network.positions());
             for (DuctInterfaceEndpoint entry : network.interfaceEndpoints) {
-                double before = source.distanceTo(Vec3.atCenterOf(entry.externalPos()));
+                double before = manhattanDistance(source, Vec3.atCenterOf(entry.externalPos()));
                 if (before >= amplitude) continue;
                 Map<BlockPos, Integer> distances = new HashMap<>();
                 ArrayDeque<BlockPos> pending = new ArrayDeque<>();
@@ -75,7 +75,8 @@ public class DuctNetworkManager {
                 for (DuctInterfaceEndpoint exit : network.interfaceEndpoints) {
                     if (entry.equals(exit)) continue;
                     double after =
-                            Vec3.atCenterOf(exit.externalPos()).distanceTo(Vec3.atCenterOf(target));
+                            manhattanDistance(
+                                    Vec3.atCenterOf(exit.externalPos()), Vec3.atCenterOf(target));
                     double loss = before + after;
                     if (loss >= amplitude || !distances.containsKey(exit.ductPos())) continue;
                     double length = loss + distances.get(exit.ductPos()) + 2;
@@ -254,7 +255,8 @@ public class DuctNetworkManager {
 
         for (BlockPos candidate : loadedDucts) {
             if (!level.hasChunkAt(candidate)
-                    || sourcePos.distanceTo(Vec3.atCenterOf(candidate)) > maxPropagationCost + 2)
+                    || manhattanDistance(sourcePos, Vec3.atCenterOf(candidate))
+                            > maxPropagationCost + 2)
                 continue;
             BlockState state = level.getBlockState(candidate);
             if (!(state.getBlock()
@@ -400,9 +402,11 @@ public class DuctNetworkManager {
     }
 
     static int computePropagationCost(Vec3 sourcePos, BlockPos targetPos) {
-        Vec3 targetCenter = Vec3.atCenterOf(targetPos);
-        double distance = sourcePos.distanceTo(targetCenter);
-        return (int) Math.ceil(distance);
+        return (int) Math.ceil(manhattanDistance(sourcePos, Vec3.atCenterOf(targetPos)));
+    }
+
+    static double manhattanDistance(Vec3 a, Vec3 b) {
+        return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z);
     }
 
     private static final class LevelCache {
@@ -565,7 +569,7 @@ public class DuctNetworkManager {
             double dx = clampDistance(x, minX, maxX);
             double dy = clampDistance(y, minY, maxY);
             double dz = clampDistance(z, minZ, maxZ);
-            return (int) Math.ceil(Math.sqrt(dx * dx + dy * dy + dz * dz));
+            return (int) Math.ceil(dx + dy + dz);
         }
 
         private double clampDistance(double value, double min, double max) {

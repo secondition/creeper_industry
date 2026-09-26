@@ -26,6 +26,7 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
     private Button pulseTypeButton;
     private Button continuousTypeButton;
     private Button emitPulseButton;
+    private Button applySnapshotButton;
     private Button applyFrequencyButton;
     private SignalValueSlider amplitudeSlider;
     private EditBox frequencyBox;
@@ -81,6 +82,10 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
                 Component.translatable("gui.creeper_industry.creative_signal_source.apply"),
                 button -> applyFrequency())
                 .bounds(controlsLeft + 156, typeTop + 113, 36, 20).build());
+        applySnapshotButton = addRenderableWidget(Button.builder(
+                Component.translatable("gui.creeper_industry.snapshot.apply"),
+                button -> sendMenuButton(CreativeSignalSourceMenu.applySnapshotButtonId()))
+                .bounds(controlsLeft, typeTop + 166, CONTROL_WIDTH, 20).build());
         emitPulseButton =
                 addRenderableWidget(
                         Button.builder(
@@ -173,6 +178,9 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
         continuousTypeButton.active = type != CreativeSignalSourceSignalType.CONTINUOUS;
         emitPulseButton.visible = type == CreativeSignalSourceSignalType.PULSE;
         emitPulseButton.active = emitPulseButton.visible && menu.getAmplitude() != 0;
+        applySnapshotButton.visible = menu.getSourceLevel() != null
+                && com.secondition.creeperindustry.content.snapshot.SnapshotDimensionManager
+                        .isSnapshotDimension(menu.getSourceLevel());
         frequencyBox.visible = type == CreativeSignalSourceSignalType.CONTINUOUS;
         applyFrequencyButton.visible = frequencyBox.visible;
 
@@ -196,7 +204,7 @@ public class CreativeSignalSourceScreen extends AbstractContainerScreen<Creative
             String value = frequencyBox.getValue().trim();
             int n = value.startsWith("1/") ? 1 : Integer.parseInt(value);
             int d = value.startsWith("1/") ? Integer.parseInt(value.substring(2)) : 1;
-            if (!SignalDefinition.validFrequency(n, d)) throw new NumberFormatException();
+            if (!SignalDefinition.validSourceFrequency(n, d)) throw new NumberFormatException();
             frequencyBox.setTextColor(0xFFE0E0E0);
             sendMenuButton(CreativeSignalSourceMenu.frequencyButtonId(n, d));
             frequencyBox.setFocused(false);

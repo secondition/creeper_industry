@@ -3,6 +3,7 @@ package com.secondition.creeperindustry;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
+import com.secondition.creeperindustry.content.snapshot.SnapshotConfig;
 
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
@@ -26,6 +27,7 @@ public class CreeperIndustry {
         CIRecipeSerializers.register(modEventBus);
         CIAttachmentTypes.register(modEventBus);
         CIDataComponents.register(modEventBus);
+        modContainer.registerConfig(net.neoforged.fml.config.ModConfig.Type.SERVER, SnapshotConfig.SPEC);
 
         modEventBus.addListener(CIDatagen::gatherData);
         modEventBus.addListener(CIPackets::register);

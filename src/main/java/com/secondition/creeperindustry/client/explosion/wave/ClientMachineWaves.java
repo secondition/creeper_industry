@@ -12,6 +12,9 @@ import java.util.*;
 
 /** Client reconstruction of the periodic wave's positive and negative peaks. */
 final class ClientMachineWaves {
+    /** Machine waves travel at the fixed signal speed, so their front uses the inscribed speed. */
+    private static final double MACHINE_FRONT_SPEED = WavePropagationMath.inscribedSpeed(1);
+
     private static final Map<UUID, PeriodicWavePacket> versions = new LinkedHashMap<>();
     private static final Map<UUID, Double> lastHeard = new HashMap<>();
 
@@ -39,8 +42,9 @@ final class ClientMachineWaves {
                         .distanceToSqr(new Vec3(p.x(), p.y(), p.z()))))
                 .limit(16)
                 .forEach(p -> {
-                    double distance = player.position().distanceTo(new Vec3(p.x(), p.y(), p.z()));
-                    double emissionTime = time - distance;
+                    double distance = WavePropagationMath.euclideanDistance(player.position(),
+                            new Vec3(p.x(), p.y(), p.z()));
+                    double emissionTime = time - distance / MACHINE_FRONT_SPEED;
                     long cycle = (long) Math.floor(cycle(p, emissionTime));
                     int stride = Math.max(1, (int) Math.ceil(2 * p.frequencyNumerator()
                             / (double) p.frequencyDenominator()));
@@ -70,9 +74,9 @@ final class ClientMachineWaves {
                 continue;
             Vec3 origin = new Vec3(p.x(), p.y(), p.z());
             double closest = WavePropagationMath.closestDistanceToAABB(origin, player.getBoundingBox());
-            if (closest >= Math.abs(p.amplitude())) continue;
+            if (closest >= WavePropagationMath.inscribedRadius(Math.abs(p.amplitude()))) continue;
             double farthest = WavePropagationMath.farthestDistanceToAABB(origin, player.getBoundingBox());
-            long center = (long) Math.floor(cycle(p, time - closest));
+            long center = (long) Math.floor(cycle(p, time - closest / MACHINE_FRONT_SPEED));
             for (long index = center - 2; index <= center; index++) {
                 for (double phase : new double[] {0.25, 0.75}) {
                     double born = emissionTime(p, index, phase);
@@ -108,13 +112,14 @@ final class ClientMachineWaves {
         UUID id = new UUID(p.version().getMostSignificantBits() ^ cycle,
                 p.version().getLeastSignificantBits() ^ (long) (phase * 4));
         return new ClientPulseWave(new PulseWaveSpawnPacket(
-                id, p.x(), p.y(), p.z(), born, 1, Math.abs(p.amplitude()),
+                id, p.x(), p.y(), p.z(), born, MACHINE_FRONT_SPEED,
+                WavePropagationMath.inscribedRadius(Math.abs(p.amplitude())),
                 p.amplitude(), 1), level);
     }
 
     private static void expire(double time) {
         versions.values().removeIf(p -> p.end() != Long.MAX_VALUE
-                && time > p.end() + Math.abs(p.amplitude()) + 2);
+                && time > p.end() + Math.abs(p.amplitude()) / MACHINE_FRONT_SPEED + 2);
     }
 
     static void clear() {

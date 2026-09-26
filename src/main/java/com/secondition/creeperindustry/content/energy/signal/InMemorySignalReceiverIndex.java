@@ -45,7 +45,10 @@ public class InMemorySignalReceiverIndex implements SignalReceiverIndex {
             int x = (int) (entry.getKey() >> 32), z = (int) (long) entry.getKey();
             if (x < minX || x > maxX || z < minZ || z > maxZ) continue;
             for (BlockPos pos : entry.getValue())
-                if (Vec3.atCenterOf(pos).distanceToSqr(center) < radius * radius) result.add(pos);
+                if (Math.abs(pos.getX() + 0.5D - center.x)
+                                + Math.abs(pos.getY() + 0.5D - center.y)
+                                + Math.abs(pos.getZ() + 0.5D - center.z)
+                        <= radius) result.add(pos);
         }
         return result;
     }

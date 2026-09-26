@@ -12,6 +12,7 @@ import com.secondition.creeperindustry.content.production.biosphere.BotanicalBio
 import com.secondition.creeperindustry.content.production.biosphere.MonsterBiosphereBlock;
 import com.secondition.creeperindustry.content.production.biosphere.ZoologicalBiosphereBlock;
 import com.secondition.creeperindustry.content.production.printer.ThreeDPrinterBlock;
+import com.secondition.creeperindustry.content.snapshot.SnapshotTableBlock;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -123,6 +124,10 @@ public class CIBlocks {
                                     BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
                                             .strength(4.0F)
                                             .sound(SoundType.METAL)));
+    public static final Supplier<Block> SNAPSHOT_TABLE =
+            BLOCKS.register("snapshot_table", () -> new SnapshotTableBlock(
+                    BlockBehaviour.Properties.ofFullCopy(Blocks.IRON_BLOCK)
+                            .strength(4.0F).sound(SoundType.METAL)));
     public static final Supplier<Block> ROCKET_LAUNCHER =
             BLOCKS.register(
                     "rocket_launcher",

@@ -4,18 +4,25 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 public final class WavePropagationMath {
-    private WavePropagationMath() {
-    }
+    /**
+     * The drawn and applied front is the sphere inscribed in the L1 front, touching all eight
+     * faces of that octahedron; its radius and expansion speed are 1/sqrt(3) of the signal's.
+     */
+    private static final double INSCRIBED_FRONT_SCALE = 1.0 / Math.sqrt(3.0);
 
-    public static double euclideanDistance(double x1, double y1, double z1, double x2, double y2, double z2) {
-        double dx = x1 - x2;
-        double dy = y1 - y2;
-        double dz = z1 - z2;
-        return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    private WavePropagationMath() {
     }
 
     public static double euclideanDistance(Vec3 a, Vec3 b) {
         return a.distanceTo(b);
+    }
+
+    public static double inscribedRadius(double propagationRadius) {
+        return propagationRadius * INSCRIBED_FRONT_SCALE;
+    }
+
+    public static double inscribedSpeed(double propagationSpeed) {
+        return propagationSpeed * INSCRIBED_FRONT_SCALE;
     }
 
     public static double effectiveAmplitude(double sourceAmplitude, double distance, double attenuationPerBlock) {
@@ -31,11 +38,11 @@ public final class WavePropagationMath {
     }
 
     public static double radiusAtAge(double speed, long ageTicks) {
-        return speed * Math.max(0, ageTicks);
+        return inscribedSpeed(speed) * Math.max(0, ageTicks);
     }
 
     public static double maxEffectiveRadius(double sourceAmplitude, double attenuationPerBlock) {
-        return sourceAmplitude / attenuationPerBlock;
+        return inscribedRadius(sourceAmplitude / attenuationPerBlock);
     }
 
     public static double closestDistanceToAABB(Vec3 point, AABB aabb) {

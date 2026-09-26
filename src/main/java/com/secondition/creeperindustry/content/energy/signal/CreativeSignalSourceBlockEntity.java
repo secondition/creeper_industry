@@ -24,6 +24,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
     private long anchorTick = -1;
     private double phase;
     private boolean registered;
+    private int configurationVersion;
     private final ContainerData data =
             new ContainerData() {
                 public int get(int i) {
@@ -68,10 +69,42 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         return amplitude;
     }
 
+    public UUID sourceId() {
+        return sourceId;
+    }
+
+    public boolean sameConfiguration(CreativeSignalSourceBlockEntity other) {
+        return signalType == other.signalType && amplitude == other.amplitude
+                && frequencyNumerator == other.frequencyNumerator
+                && frequencyDenominator == other.frequencyDenominator;
+    }
+
+    public boolean matchesConfiguration(CompoundTag tag) {
+        return signalType.getSerializedName().equals(tag.getString("signal_type"))
+                && amplitude == tag.getInt("amplitude")
+                && frequencyNumerator == tag.getInt("frequency_numerator")
+                && frequencyDenominator == tag.getInt("frequency_denominator")
+                && configurationVersion == tag.getInt("configuration_version");
+    }
+
+    public void copyConfiguration(CreativeSignalSourceBlockEntity other) {
+        signalType = other.signalType;
+        amplitude = other.amplitude;
+        frequencyNumerator = other.frequencyNumerator;
+        frequencyDenominator = other.frequencyDenominator;
+        wavelength = other.wavelength;
+        configurationVersion++;
+        anchorTick = -1;
+        phase = 0;
+        updateSource();
+        setChanged();
+    }
+
     public void setSignalType(CreativeSignalSourceSignalType type) {
         if (type != signalType) {
             signalType = type;
             if (type == CreativeSignalSourceSignalType.PULSE) anchorTick = -1;
+            configurationVersion++;
             updateSource();
             setChanged();
         }
@@ -82,23 +115,25 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         if (value != amplitude) {
             amplitude = value;
             if (value == 0) anchorTick = -1;
+            configurationVersion++;
             updateSource();
             setChanged();
         }
     }
 
     public void setFrequency(int numerator, int denominator) {
-        if (!SignalDefinition.validFrequency(numerator, denominator)
+        if (!SignalDefinition.validSourceFrequency(numerator, denominator)
                 || numerator == frequencyNumerator && denominator == frequencyDenominator) return;
         if (registered && level != null) {
-            double cycles = phase + (level.getGameTime() - anchorTick)
+            double cycles = phase + (SignalTime.now(level) - anchorTick)
                     * frequencyNumerator / (double) frequencyDenominator;
             phase = cycles - Math.floor(cycles);
-            anchorTick = level.getGameTime();
+            anchorTick = SignalTime.now(level);
         }
         frequencyNumerator = numerator;
         frequencyDenominator = denominator;
         wavelength = numerator == 1 ? denominator : 0;
+        configurationVersion++;
         updateSource();
         setChanged();
     }
@@ -115,7 +150,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
                                 UUID.randomUUID(),
                                 level.dimension(),
                                 Vec3.atCenterOf(worldPosition),
-                                level.getGameTime(),
+                                SignalTime.now(level),
                                 SignalDefinition.pulse(amplitude)),
                         true);
     }
@@ -127,7 +162,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
             return;
         }
         if (anchorTick < 0) {
-            anchorTick = level.getGameTime();
+            anchorTick = SignalTime.now(level);
             phase = 0;
         }
         SignalRuntimeAccess.get(level)
@@ -137,11 +172,18 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
                                 sourceId,
                                 level.dimension(),
                                 Vec3.atCenterOf(worldPosition),
-                                level.getGameTime(),
-                                new SignalDefinition(amplitude, wavelength, frequencyNumerator,
-                                        frequencyDenominator, anchorTick, phase,
-                                        SignalWaveform.TRIANGLE)));
+                                SignalTime.now(level),
+                                signalDefinition()));
         registered = true;
+    }
+
+    private SignalDefinition signalDefinition() {
+        SignalDefinition definition = new SignalDefinition(amplitude, wavelength,
+                frequencyNumerator, frequencyDenominator, anchorTick, phase,
+                SignalWaveform.TRIANGLE);
+        return level == null ? definition
+                : com.secondition.creeperindustry.content.snapshot.SnapshotDimensionManager
+                        .scaleSignal(level, definition);
     }
 
     private void removeSource() {
@@ -193,6 +235,7 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         tag.putInt("frequency_numerator", frequencyNumerator);
         tag.putInt("frequency_denominator", frequencyDenominator);
         tag.putLong("anchor_tick", anchorTick);
+        tag.putInt("configuration_version", configurationVersion);
         tag.putDouble("phase", phase);
     }
 
@@ -204,12 +247,13 @@ public class CreativeSignalSourceBlockEntity extends BlockEntity implements Menu
         amplitude = tag.contains("amplitude") ? Math.clamp(tag.getInt("amplitude"), -64, 64) : 4;
         int numerator = tag.contains("frequency_numerator") ? tag.getInt("frequency_numerator") : 1;
         int denominator = tag.contains("frequency_denominator") ? tag.getInt("frequency_denominator") : 8;
-        if (SignalDefinition.validFrequency(numerator, denominator)) {
+        if (SignalDefinition.validSourceFrequency(numerator, denominator)) {
             frequencyNumerator = numerator;
             frequencyDenominator = denominator;
             wavelength = numerator == 1 ? denominator : 0;
         }
         anchorTick = tag.contains("anchor_tick") ? tag.getLong("anchor_tick") : -1;
+        configurationVersion = tag.getInt("configuration_version");
         double savedPhase = tag.getDouble("phase");
         phase = Double.isFinite(savedPhase) && savedPhase >= 0 && savedPhase < 1
                 ? savedPhase : 0;

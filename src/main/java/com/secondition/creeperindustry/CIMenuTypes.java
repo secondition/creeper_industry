@@ -8,6 +8,7 @@ import com.secondition.creeperindustry.content.logistics.dropper.PrecisionDroppe
 import com.secondition.creeperindustry.content.logistics.launcher.RocketLauncherMenu;
 import com.secondition.creeperindustry.content.production.biosphere.BiosphereMenu;
 import com.secondition.creeperindustry.content.production.printer.ThreeDPrinterMenu;
+import com.secondition.creeperindustry.content.snapshot.SnapshotTableMenu;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
@@ -28,6 +29,8 @@ public class CIMenuTypes {
             () -> IMenuTypeExtension.create(CreativeSignalSourceMenu::new));
     public static final Supplier<MenuType<ThreeDPrinterMenu>> THREE_D_PRINTER = MENU_TYPES.register("three_d_printer",
             () -> IMenuTypeExtension.create(ThreeDPrinterMenu::new));
+    public static final Supplier<MenuType<SnapshotTableMenu>> SNAPSHOT_TABLE = MENU_TYPES.register("snapshot_table",
+            () -> IMenuTypeExtension.create(SnapshotTableMenu::new));
     public static final Supplier<MenuType<RocketLauncherMenu>> ROCKET_LAUNCHER = MENU_TYPES.register("rocket_launcher",
             () -> IMenuTypeExtension.create(RocketLauncherMenu::new));
 

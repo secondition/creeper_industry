@@ -7,6 +7,10 @@ import com.secondition.creeperindustry.client.production.biosphere.BiosphereScre
 import com.secondition.creeperindustry.content.explosion.wave.network.PulseWaveSpawnPacket;
 import com.secondition.creeperindustry.content.logistics.storage.DiscBurnerScreen;
 import com.secondition.creeperindustry.content.logistics.storage.StorageDiscMinecartRenderer;
+import com.secondition.creeperindustry.content.snapshot.SnapshotDimensionPacket;
+import com.secondition.creeperindustry.content.snapshot.SnapshotTableMenu;
+import com.secondition.creeperindustry.client.snapshot.SnapshotClient;
+import com.secondition.creeperindustry.client.snapshot.SnapshotTableScreen;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -26,6 +30,7 @@ public class CreeperIndustryClient {
         com.secondition.creeperindustry.content.explosion.wave.network.PeriodicWavePacket
                 .setClientHandler(ClientPulseWavePresentation::periodic);
         PulseWaveSpawnPacket.setClientHandler(ClientPulseWavePresentation::spawn);
+        SnapshotDimensionPacket.setClientHandler(SnapshotClient::addDimension);
     }
 
     @SubscribeEvent
@@ -38,6 +43,7 @@ public class CreeperIndustryClient {
         event.register(CIMenuTypes.BIOSPHERE.get(), BiosphereScreen::new);
         event.register(CIMenuTypes.DISC_BURNER.get(), DiscBurnerScreen::new);
         event.register(CIMenuTypes.CREATIVE_SIGNAL_SOURCE.get(), CreativeSignalSourceScreen::new);
+        event.register(CIMenuTypes.SNAPSHOT_TABLE.get(), SnapshotTableScreen::new);
     }
 
     @SubscribeEvent

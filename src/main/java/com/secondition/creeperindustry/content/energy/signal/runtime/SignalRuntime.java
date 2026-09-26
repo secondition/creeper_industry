@@ -125,18 +125,19 @@ public final class SignalRuntime implements AutoCloseable {
     }
 
     public double readSignal(Level level, BlockPos pos) {
+        long now = SignalTime.now(level);
         ReceiverState state = states.get(pos);
         if (state == null) return 0;
         Map<PathKey, Contribution> current = new HashMap<>(state.contributions);
         state.pending.stream()
-                .filter(arrival -> !arrival.sample() && arrival.time() <= level.getGameTime() + 1e-7)
+                .filter(arrival -> !arrival.sample() && arrival.time() <= now + 1e-7)
                 .sorted(Comparator.comparingDouble(Arrival::time).thenComparingLong(Arrival::order))
                 .forEach(arrival -> {
                     if (arrival.value() == null) current.remove(arrival.key());
                     else current.put(arrival.key(), arrival.value());
                 });
         return new CompositeWaveform(current.values().stream().map(Contribution::term).toList())
-                .valueAt(level.getGameTime() + 1e-7) / (double) SignalDefinition.AMPLITUDE_SCALE;
+                .valueAt(now + 1e-7) / (double) SignalDefinition.AMPLITUDE_SCALE;
     }
 
     public void scheduleTopologyRefresh(Level level, Collection<BlockPos> positions) {
@@ -166,12 +167,13 @@ public final class SignalRuntime implements AutoCloseable {
     private void endVersion(Level level, UUID id) {
         Version old = current.remove(id);
         if (old == null) return;
-        old.end = level.getGameTime();
+        long now = SignalTime.now(level);
+        old.end = now;
         for (var entry : states.entrySet())
             for (var path : entry.getValue().paths.entrySet())
                 if (path.getKey().version().equals(old.id))
                     closePath(level, entry.getKey(), entry.getValue(), path.getKey(),
-                            level.getGameTime() + path.getValue());
+                            now + path.getValue());
     }
 
     public void emitPulse(Level level, SignalSource source, boolean present) {
@@ -217,6 +219,7 @@ public final class SignalRuntime implements AutoCloseable {
 
     private void scheduleVersion(Level level, ReceiverState state, BlockPos pos,
             Version version, boolean replay) {
+        long now = SignalTime.now(level);
         if (version.end <= version.source.gameTime()) return;
         for (var route : routes(level, version.source, pos).values()) {
             Contribution base = contribution(version, route, 0);
@@ -224,25 +227,25 @@ public final class SignalRuntime implements AutoCloseable {
             double start = version.source.gameTime() + base.delay();
             double end = version.end == Long.MAX_VALUE ? Double.POSITIVE_INFINITY
                     : version.end + base.delay();
-            if (replay && end <= level.getGameTime()) continue;
+            if (replay && end <= now) continue;
             PathKey key = new PathKey(version.source.id(), version.id, route.id(), sequence++);
             state.paths.put(key, base.delay());
             if (version.source instanceof ContinuousSignalSource) {
-                if (replay && start <= level.getGameTime() && end > level.getGameTime())
+                if (replay && start <= now && end > now)
                     state.contributions.put(key, base);
-                else if (start > level.getGameTime() || !replay)
+                else if (start > now || !replay)
                     queue(level, start, pos, state, key, base, false);
-                if (Double.isFinite(end) && end > level.getGameTime())
+                if (Double.isFinite(end) && end > now)
                     closePath(level, pos, state, key, end);
             } else {
                 for (int step = 0; step < 3; step++) {
                     double at = start + step;
-                    if (replay && at <= level.getGameTime() && at + 1 > level.getGameTime())
+                    if (replay && at <= now && at + 1 > now)
                         state.contributions.put(key, contribution(version, route, step));
-                    else if (at > level.getGameTime() || !replay)
+                    else if (at > now || !replay)
                         queue(level, at, pos, state, key, contribution(version, route, step), false);
                 }
-                if (end > level.getGameTime()) closePath(level, pos, state, key, end);
+                if (end > now) closePath(level, pos, state, key, end);
             }
         }
     }
@@ -305,7 +308,7 @@ public final class SignalRuntime implements AutoCloseable {
     }
 
     public void tick(ServerLevel level) {
-        long now = level.getGameTime();
+        long now = SignalTime.now(level);
         if (lastTick == now) return;
         lastTick = now;
         indexLoadedChunks(level);

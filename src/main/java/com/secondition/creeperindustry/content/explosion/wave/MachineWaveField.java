@@ -74,8 +74,11 @@ public final class MachineWaveField {
         versions.removeIf(
                 v ->
                         v.end != Long.MAX_VALUE
-                                && time > v.end + Math.abs(v.source.signal().amplitude())
-                                        / v.source.signal().speed() + 2);
+                                && time > v.end
+                                        + Math.abs(v.source.signal().amplitude())
+                                                / WavePropagationMath.inscribedSpeed(
+                                                        v.source.signal().speed())
+                                        + 2);
         if (time % 20 == 0) {
             Set<UUID> players = new HashSet<>();
             Set<UUID> live = versions.stream().map(v -> v.id)
@@ -101,7 +104,7 @@ public final class MachineWaveField {
             var signal = source.signal();
             if (signal.frequency() >= 1)
                 continue;
-            double radius = Math.abs(signal.amplitude());
+            double radius = WavePropagationMath.inscribedRadius(Math.abs(signal.amplitude()));
             Vec3 origin = source.position();
             for (Entity entity :
                     level.getEntitiesOfClass(
@@ -109,10 +112,10 @@ public final class MachineWaveField {
                             new AABB(origin, origin).inflate(radius),
                             e -> !e.isSpectator())) {
                 Vec3 point = entity.getBoundingBox().getCenter();
-                double distance = point.distanceTo(origin);
+                double distance = WavePropagationMath.euclideanDistance(point, origin);
                 double magnitude = Math.max(0, radius - distance);
                 if (magnitude <= 0) continue;
-                double sourceTime = time - distance / signal.speed();
+                double sourceTime = time - distance / WavePropagationMath.inscribedSpeed(signal.speed());
                 if (sourceTime < source.gameTime()
                         || sourceTime >= version.end)
                     continue;

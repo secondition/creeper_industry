@@ -85,6 +85,9 @@ public class CIItems {
             ITEMS.register(
                     "three_d_printer",
                     () -> new BlockItem(CIBlocks.THREE_D_PRINTER.get(), new Item.Properties()));
+    public static final Supplier<Item> SNAPSHOT_TABLE =
+            ITEMS.register("snapshot_table", () -> new BlockItem(
+                    CIBlocks.SNAPSHOT_TABLE.get(), new Item.Properties()));
     public static final Supplier<Item> ROCKET_LAUNCHER =
             ITEMS.register(
                     "rocket_launcher",

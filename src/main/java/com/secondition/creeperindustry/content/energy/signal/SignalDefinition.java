@@ -30,12 +30,30 @@ public record SignalDefinition(
     }
 
     public static boolean validFrequency(int numerator, int denominator) {
+        return numerator >= 1 && numerator <= 8 && denominator >= 1 && denominator <= 2560;
+    }
+
+    public static boolean validSourceFrequency(int numerator, int denominator) {
         return numerator == 1 && denominator >= 1 && denominator <= 320
                 || denominator == 1 && numerator >= 2 && numerator <= 8;
     }
 
     public double frequency() {
         return frequencyNumerator / (double) frequencyDenominator;
+    }
+
+    public SignalDefinition atSnapshot(long snapshotTick, int slowdown) {
+        if (waveform == SignalWaveform.PULSE) return this;
+        int numerator = frequencyNumerator;
+        int denominator = frequencyDenominator * slowdown;
+        int divisor = java.math.BigInteger.valueOf(numerator)
+                .gcd(java.math.BigInteger.valueOf(denominator)).intValue();
+        numerator /= divisor;
+        denominator /= divisor;
+        double snapshotPhase = cycle(snapshotTick);
+        snapshotPhase -= Math.floor(snapshotPhase);
+        return new SignalDefinition(amplitude, numerator == 1 ? denominator : 0,
+                numerator, denominator, snapshotTick, snapshotPhase, waveform);
     }
 
     public double speed() {

@@ -1,6 +1,7 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
 import com.secondition.creeperindustry.CIMenuTypes;
+import com.secondition.creeperindustry.content.snapshot.SnapshotDimensionManager;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -40,6 +41,7 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
         if (id == 0) source.setSignalType(CreativeSignalSourceSignalType.PULSE);
         else if (id == 1) source.setSignalType(CreativeSignalSourceSignalType.CONTINUOUS);
         else if (id == 2) source.emitPulse();
+        else if (id == 3) SnapshotDimensionManager.apply(source);
         else if (id >= 100 && id <= 228) source.setAmplitude(id - 164);
         else if (id >= 32769) source.setFrequency(id >>> 15, id & 32767);
         else return false;
@@ -54,6 +56,10 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
         return source != null
                 && !source.isRemoved()
                 && Container.stillValidBlockEntity(source, player);
+    }
+
+    public net.minecraft.world.level.Level getSourceLevel() {
+        return source == null ? null : source.getLevel();
     }
 
     public CreativeSignalSourceSignalType getSignalType() {
@@ -94,6 +100,10 @@ public class CreativeSignalSourceMenu extends AbstractContainerMenu {
 
     public static int emitPulseButtonId() {
         return 2;
+    }
+
+    public static int applySnapshotButtonId() {
+        return 3;
     }
 
     private static Context read(Inventory inventory, RegistryFriendlyByteBuf buf) {

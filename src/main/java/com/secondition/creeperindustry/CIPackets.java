@@ -5,6 +5,7 @@ import com.secondition.creeperindustry.content.logistics.rocket.RocketTargetingP
 
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import com.secondition.creeperindustry.content.snapshot.SnapshotDimensionPacket;
 
 public class CIPackets {
     private static final String NETWORK_VERSION = "2";
@@ -26,5 +27,7 @@ public class CIPackets {
                 PulseWaveSpawnPacket.TYPE,
                 PulseWaveSpawnPacket.STREAM_CODEC,
                 PulseWaveSpawnPacket::handle);
+        registrar.playToClient(SnapshotDimensionPacket.TYPE, SnapshotDimensionPacket.STREAM_CODEC,
+                SnapshotDimensionPacket::handle);
     }
 }

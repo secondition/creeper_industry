@@ -43,6 +43,7 @@ public class CICreativeModeTabs {
                                                 output.accept(CIBlocks.MONSTER_BIOSPHERE.get());
                                                 output.accept(CIBlocks.THREE_D_PRINTER.get());
                                                 output.accept(CIBlocks.ROCKET_LAUNCHER.get());
+                                                output.accept(CIBlocks.SNAPSHOT_TABLE.get());
                                             })
                                     .build());
 
