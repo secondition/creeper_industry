@@ -11,7 +11,7 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
 
-/** Client reconstruction of the periodic wave's positive and negative peaks. */
+/** Client reconstruction of the periodic wave's positive peaks. */
 final class ClientMachineWaves {
     private static final double MACHINE_FRONT_SPEED = 1;
 
@@ -50,24 +50,22 @@ final class ClientMachineWaves {
                             / (double) p.frequencyDenominator()));
                     Set<Integer> radii = new HashSet<>();
                     for (long i = -1; i <= 1; i++) {
-                        long index = cycle + i * stride;
-                        addShell(result, p, index, 0.25, time, radii);
-                        addShell(result, p, index, 0.75, time, radii);
+                        addShell(result, p, cycle + i * stride, time, radii);
                     }
                 });
         return result;
     }
 
     private static void addShell(List<ClientPulseWave> result, PeriodicWavePacket p,
-            long cycle, double phase, double time, Set<Integer> radii) {
-        double born = emissionTime(p, cycle, phase);
+            long cycle, double time, Set<Integer> radii) {
+        double born = emissionTime(p, cycle, 0.25);
         int radius = (int) Math.floor((time - born) * MACHINE_FRONT_SPEED);
         double sourceTime = time - radius / MACHINE_FRONT_SPEED;
         if (born < p.start() || born >= p.end() || born > time
                 || radius >= Math.abs(p.amplitude())
                 || sourceTime < p.start() || sourceTime >= p.end()
                 || !radii.add(radius)) return;
-        result.add(wave(p, cycle, phase, born, SignalWaveform.value(cycle(p, sourceTime))));
+        result.add(wave(p, cycle, 0.25, born, SignalWaveform.value(cycle(p, sourceTime))));
     }
 
     static List<ClientPulseWave> arrivals(long time, LocalPlayer player) {

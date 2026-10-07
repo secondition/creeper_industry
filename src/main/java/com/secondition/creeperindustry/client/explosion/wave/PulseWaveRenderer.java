@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
-/** Depth-aware refraction of block-shell surfaces in one bounded fullscreen pass. */
+/** Depth-aware refraction of wavefront spheres in one bounded fullscreen pass. */
 public final class PulseWaveRenderer {
     private static final int MAX_RENDERED_WAVES = 8;
     private static final ClientPulseWave[] SELECTED = new ClientPulseWave[MAX_RENDERED_WAVES];
@@ -108,8 +108,10 @@ public final class PulseWaveRenderer {
                 ClientPulseWave wave = SELECTED[i];
                 Vec3 center = wave.origin().subtract(camera);
                 float radius = (float) wave.radiusAt(gameTime);
+                // The drawn sphere passes through the outermost block centers of the layer.
+                float extent = radius + 0.5F;
                 shader.safeGetUniform("Wave" + i)
-                        .set((float) center.x, (float) center.y, (float) center.z, radius);
+                        .set((float) center.x, (float) center.y, (float) center.z, extent);
                 float seed = (wave.id().getLeastSignificantBits() & 0xFFFF) / 65535.0F * 6.283185F;
                 shader.safeGetUniform("Style" + i)
                         .set(
