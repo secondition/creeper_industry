@@ -31,7 +31,7 @@ final class ClientPulseWave {
                 && Double.isFinite(packet.originY())
                 && Double.isFinite(packet.originZ())
                 && positiveFinite(packet.speedBlocksPerTick())
-                && positiveFinite(packet.maxRadius())
+                && Double.isFinite(packet.maxRadius()) && packet.maxRadius() >= 0
                 && positiveFinite(Math.abs(packet.amplitude()))
                 && positiveFinite(packet.attenuationPerBlock());
     }
@@ -55,8 +55,8 @@ final class ClientPulseWave {
     double radiusAt(double gameTime) {
         return Math.min(
                 maxRadius(),
-                emission.speedBlocksPerTick()
-                        * Math.max(0.0, gameTime - emission.emissionGameTime()));
+                Math.floor(emission.speedBlocksPerTick()
+                        * (gameTime - emission.emissionGameTime())));
     }
 
     double maxRadius() {
@@ -70,6 +70,11 @@ final class ClientPulseWave {
     boolean isExpired(double gameTime) {
         // Keep the final tick available while the renderer interpolates previous -> current.
         return gameTime > arrivalTime(maxRadius()) + 1.0;
+    }
+
+    boolean arrivesAt(int shell, long gameTime) {
+        double arrival = arrivalTime(shell);
+        return arrival > gameTime - 1.0 && arrival <= gameTime;
     }
 
     boolean canImpactAt(long gameTime) {
@@ -93,7 +98,7 @@ final class ClientPulseWave {
 
     float visualStrength(double radius) {
         return Math.min(1.0F, strengthAt(radius) * 1.4F)
-                * (float) Mth.clamp(radius / 0.6, 0.0, 1.0);
+                * (float) Mth.clamp((radius + 0.5) / 0.6, 0.0, 1.0);
     }
 
     boolean hitLocalPlayer() {

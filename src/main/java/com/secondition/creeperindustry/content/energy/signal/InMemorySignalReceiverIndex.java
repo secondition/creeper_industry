@@ -1,5 +1,7 @@
 package com.secondition.creeperindustry.content.energy.signal;
 
+import com.secondition.creeperindustry.content.explosion.wave.WavePropagationMath;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 
@@ -31,7 +33,7 @@ public class InMemorySignalReceiverIndex implements SignalReceiverIndex {
         return buckets.values().stream().flatMap(Collection::stream).toList();
     }
 
-    public Collection<BlockPos> getWithinManhattanDistance(BlockPos center, int radius) {
+    public Collection<BlockPos> getWithinSphere(BlockPos center, int radius) {
         return within(Vec3.atCenterOf(center), radius);
     }
 
@@ -45,10 +47,7 @@ public class InMemorySignalReceiverIndex implements SignalReceiverIndex {
             int x = (int) (entry.getKey() >> 32), z = (int) (long) entry.getKey();
             if (x < minX || x > maxX || z < minZ || z > maxZ) continue;
             for (BlockPos pos : entry.getValue())
-                if (Math.abs(pos.getX() + 0.5D - center.x)
-                                + Math.abs(pos.getY() + 0.5D - center.y)
-                                + Math.abs(pos.getZ() + 0.5D - center.z)
-                        <= radius) result.add(pos);
+                if (WavePropagationMath.shell(center, pos) <= radius) result.add(pos);
         }
         return result;
     }

@@ -2,7 +2,6 @@ package com.secondition.creeperindustry.content.explosion.wave.network;
 
 import com.secondition.creeperindustry.CreeperIndustry;
 import com.secondition.creeperindustry.content.explosion.wave.PulseWaveEmission;
-import com.secondition.creeperindustry.content.explosion.wave.WavePropagationMath;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -66,8 +65,7 @@ public record PulseWaveSpawnPacket(
                 origin.y,
                 origin.z,
                 emission.emissionGameTime(),
-                WavePropagationMath.inscribedSpeed(
-                        emission.profile().propagationSpeedBlocksPerTick()),
+                emission.profile().propagationSpeedBlocksPerTick(),
                 emission.maxEffectiveRadius(),
                 emission.sourceAmplitude(),
                 emission.profile().attenuationPerBlock());

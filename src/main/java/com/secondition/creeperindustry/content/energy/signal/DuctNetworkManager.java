@@ -2,6 +2,7 @@ package com.secondition.creeperindustry.content.energy.signal;
 
 import com.secondition.creeperindustry.CIBlocks;
 import com.secondition.creeperindustry.content.energy.transmission.DuctTransmissionHelper;
+import com.secondition.creeperindustry.content.explosion.wave.WavePropagationMath;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -50,13 +51,13 @@ public class DuctNetworkManager {
         List<Route> cached = routeCache.get(query);
         if (cached != null) return cached;
         java.util.ArrayList<Route> result = new java.util.ArrayList<>();
-        double direct = manhattanDistance(source, Vec3.atCenterOf(target));
+        int direct = WavePropagationMath.shell(source, target);
         if (direct < amplitude) result.add(new Route("air", direct, direct));
         for (DuctNetwork network : findEnterableNetworks(level, source, amplitude)) {
             Route best = null;
             Set<BlockPos> positions = new HashSet<>(network.positions());
             for (DuctInterfaceEndpoint entry : network.interfaceEndpoints) {
-                double before = manhattanDistance(source, Vec3.atCenterOf(entry.externalPos()));
+                int before = WavePropagationMath.shell(source, entry.externalPos());
                 if (before >= amplitude) continue;
                 Map<BlockPos, Integer> distances = new HashMap<>();
                 ArrayDeque<BlockPos> pending = new ArrayDeque<>();
@@ -74,9 +75,7 @@ public class DuctNetworkManager {
                 }
                 for (DuctInterfaceEndpoint exit : network.interfaceEndpoints) {
                     if (entry.equals(exit)) continue;
-                    double after =
-                            manhattanDistance(
-                                    Vec3.atCenterOf(exit.externalPos()), Vec3.atCenterOf(target));
+                    int after = WavePropagationMath.shell(Vec3.atCenterOf(exit.externalPos()), target);
                     double loss = before + after;
                     if (loss >= amplitude || !distances.containsKey(exit.ductPos())) continue;
                     double length = loss + distances.get(exit.ductPos()) + 2;
@@ -147,7 +146,7 @@ public class DuctNetworkManager {
             int maxPropagationCost,
             SignalReceiverIndex receiverIndex) {
         Collection<BlockPos> directTargets =
-                receiverIndex.getWithinManhattanDistance(
+                receiverIndex.getWithinSphere(
                         BlockPos.containing(sourcePos), maxPropagationCost);
         Set<DuctNetwork> networks = findEnterableNetworks(level, sourcePos, maxPropagationCost);
         if (networks.isEmpty()) {
@@ -220,7 +219,7 @@ public class DuctNetworkManager {
 
         LinkedHashSet<BlockPos> receivers = new LinkedHashSet<>();
         for (BlockPos endpoint : previousEndpoints)
-            receivers.addAll(receiverIndex.getWithinManhattanDistance(endpoint, maxPropagationCost));
+            receivers.addAll(receiverIndex.getWithinSphere(endpoint, maxPropagationCost));
         for (BlockPos receiverPos : receiverIndex.getAll()) {
             for (DuctNetwork network : networks) {
                 if (network.canPotentiallyReach(receiverPos, maxPropagationCost)) {
@@ -255,7 +254,7 @@ public class DuctNetworkManager {
 
         for (BlockPos candidate : loadedDucts) {
             if (!level.hasChunkAt(candidate)
-                    || manhattanDistance(sourcePos, Vec3.atCenterOf(candidate))
+                    || WavePropagationMath.shell(sourcePos, candidate)
                             > maxPropagationCost + 2)
                 continue;
             BlockState state = level.getBlockState(candidate);
@@ -402,11 +401,7 @@ public class DuctNetworkManager {
     }
 
     static int computePropagationCost(Vec3 sourcePos, BlockPos targetPos) {
-        return (int) Math.ceil(manhattanDistance(sourcePos, Vec3.atCenterOf(targetPos)));
-    }
-
-    static double manhattanDistance(Vec3 a, Vec3 b) {
-        return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z);
+        return WavePropagationMath.shell(sourcePos, targetPos);
     }
 
     private static final class LevelCache {
@@ -516,9 +511,8 @@ public class DuctNetworkManager {
                 return Integer.MAX_VALUE;
             }
 
-            Vec3 targetCenter = Vec3.atCenterOf(targetPos);
             for (DuctInterfaceEndpoint endpoint : interfaceEndpoints) {
-                int cost = computePropagationCost(targetCenter, endpoint.externalPos());
+                int cost = computePropagationCost(Vec3.atCenterOf(endpoint.externalPos()), targetPos);
                 if (cost < best) {
                     best = cost;
                     if (best == 0) {
@@ -566,10 +560,11 @@ public class DuctNetworkManager {
                 double maxX,
                 double maxY,
                 double maxZ) {
-            double dx = clampDistance(x, minX, maxX);
-            double dy = clampDistance(y, minY, maxY);
-            double dz = clampDistance(z, minZ, maxZ);
-            return (int) Math.ceil(dx + dy + dz);
+            Vec3 center = Vec3.atCenterOf(BlockPos.containing(x, y, z));
+            double dx = clampDistance(center.x, minX, maxX);
+            double dy = clampDistance(center.y, minY, maxY);
+            double dz = clampDistance(center.z, minZ, maxZ);
+            return (int) Math.floor(Math.sqrt(dx * dx + dy * dy + dz * dz) + 0.5);
         }
 
         private double clampDistance(double value, double min, double max) {

@@ -11,7 +11,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.*;
 
-/** Analytic traveling periodic fields; no per-crest server objects or explosion instances. */
+/** Traveling periodic fields sampled by block shell, with signed forces merged per entity. */
 public final class MachineWaveField {
     private static final class Version {
         final UUID id = UUID.randomUUID();
@@ -47,7 +47,7 @@ public final class MachineWaveField {
     public void change(ServerLevel level, UUID id, ContinuousSignalSource next) {
         for (Version version : versions)
             if (version.source.id().equals(id) && version.end == Long.MAX_VALUE) {
-                version.end = level.getGameTime();
+                version.end = SignalTime.now(level);
                 send(level, version);
             }
         if (next != null) {
@@ -70,14 +70,13 @@ public final class MachineWaveField {
     }
 
     public void tick(ServerLevel level) {
-        long time = level.getGameTime();
+        long time = SignalTime.now(level);
         versions.removeIf(
                 v ->
                         v.end != Long.MAX_VALUE
                                 && time > v.end
                                         + Math.abs(v.source.signal().amplitude())
-                                                / WavePropagationMath.inscribedSpeed(
-                                                        v.source.signal().speed())
+                                                / v.source.signal().speed()
                                         + 2);
         if (time % 20 == 0) {
             Set<UUID> players = new HashSet<>();
@@ -104,18 +103,18 @@ public final class MachineWaveField {
             var signal = source.signal();
             if (signal.frequency() >= 1)
                 continue;
-            double radius = WavePropagationMath.inscribedRadius(Math.abs(signal.amplitude()));
+            double radius = WavePropagationMath.maxEffectiveRadius(Math.abs(signal.amplitude()), 1);
             Vec3 origin = source.position();
             for (Entity entity :
                     level.getEntitiesOfClass(
                             Entity.class,
-                            new AABB(origin, origin).inflate(radius),
+                            new AABB(origin, origin).inflate(radius + 0.5),
                             e -> !e.isSpectator())) {
                 Vec3 point = entity.getBoundingBox().getCenter();
-                double distance = WavePropagationMath.euclideanDistance(point, origin);
-                double magnitude = Math.max(0, radius - distance);
+                int shell = WavePropagationMath.shell(origin, point);
+                double magnitude = WavePropagationMath.effectiveAmplitude(Math.abs(signal.amplitude()), shell, 1);
                 if (magnitude <= 0) continue;
-                double sourceTime = time - distance / WavePropagationMath.inscribedSpeed(signal.speed());
+                double sourceTime = time - shell / signal.speed();
                 if (sourceTime < source.gameTime()
                         || sourceTime >= version.end)
                     continue;

@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.secondition.creeperindustry.CISignalSourceTypes;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -24,6 +25,7 @@ public record ExplosionSignalSource(
         if (id == null) {
             throw new IllegalArgumentException("Signal source id cannot be null");
         }
+        position = Vec3.atCenterOf(BlockPos.containing(position));
     }
 
     public static Optional<ExplosionSignalSource> fromContext(ExplosionSignalContext context, ExplosionSignalAmplitudeResolver amplitudeResolver) {

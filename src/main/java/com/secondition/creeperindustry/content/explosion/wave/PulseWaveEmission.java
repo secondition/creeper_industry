@@ -1,5 +1,6 @@
 package com.secondition.creeperindustry.content.explosion.wave;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.phys.Vec3;
@@ -30,6 +31,7 @@ public record PulseWaveEmission(
         if (profile == null) {
             throw new IllegalArgumentException("Propagation profile cannot be null");
         }
+        origin = Vec3.atCenterOf(BlockPos.containing(origin));
     }
 
     public double maxEffectiveRadius() {

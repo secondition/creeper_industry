@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.secondition.creeperindustry.CISignalSourceTypes;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -22,6 +23,7 @@ public record MachineSignalSource(
         if (gameTime < 0) {
             throw new IllegalArgumentException("Game time cannot be negative");
         }
+        position = Vec3.atCenterOf(BlockPos.containing(position));
     }
 
     @Override

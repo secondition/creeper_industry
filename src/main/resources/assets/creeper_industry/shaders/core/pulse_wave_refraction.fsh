@@ -34,6 +34,57 @@ vec3 unproject(vec2 uv, float depth) {
     return position.xyz / position.w;
 }
 
+// The ball is a union of unit cubes whose centers lie within radius + 0.5.
+bool blockBallHit(vec3 relative, vec3 ray, float radius, float sceneDistance,
+        out float hitDistance, out vec3 normal) {
+    float ballRadius = radius + 0.5;
+    float outerRadius = ballRadius + sqrt(0.75) + 0.001;
+    float b = dot(relative, ray);
+    float discriminant = b * b - dot(relative, relative) + outerRadius * outerRadius;
+    if (discriminant <= 0.0) return false;
+    float root = sqrt(discriminant);
+    float travel = max(0.0, -b - root);
+    float end = min(sceneDistance, -b + root);
+    if (travel >= end) return false;
+
+    float innerRadius = max(0.0, ballRadius - sqrt(0.75) - 0.001);
+    float innerDiscriminant = b * b - dot(relative, relative) + innerRadius * innerRadius;
+    float innerEntry = -b - sqrt(max(0.0, innerDiscriminant));
+    float innerExit = -b + sqrt(max(0.0, innerDiscriminant));
+    vec3 direction = vec3(ray.x >= 0.0 ? 1.0 : -1.0,
+            ray.y >= 0.0 ? 1.0 : -1.0, ray.z >= 0.0 ? 1.0 : -1.0);
+    vec3 inverseRay = direction / max(abs(ray), vec3(1e-8));
+    vec3 delta = abs(inverseRay);
+    vec3 cell = floor(relative + ray * (travel + 0.001) + 0.5);
+    vec3 next = (cell + direction * 0.5 - relative) * inverseRay;
+    next = mix(next, vec3(1e30), lessThan(abs(ray), vec3(1e-8)));
+    bool inside = dot(cell, cell) <= ballRadius * ballRadius;
+
+    while (travel < end) {
+        // Traverse the surface band; the inner sphere contains only occupied cells.
+        if (inside && innerDiscriminant > 0.0 && travel >= innerEntry && travel < innerExit) {
+            travel = innerExit;
+            if (travel >= end) break;
+            cell = floor(relative + ray * (travel + 0.001) + 0.5);
+            next = (cell + direction * 0.5 - relative) * inverseRay;
+            next = mix(next, vec3(1e30), lessThan(abs(ray), vec3(1e-8)));
+        }
+        float crossing = min(next.x, min(next.y, next.z));
+        if (crossing >= end) break;
+        vec3 axes = step(next, vec3(crossing + 1e-5));
+        cell += direction * axes;
+        bool nextInside = dot(cell, cell) <= ballRadius * ballRadius;
+        if (nextInside != inside) {
+            hitDistance = crossing;
+            normal = normalize(direction * axes) * (nextInside ? -1.0 : 1.0);
+            return true;
+        }
+        next += delta * axes;
+        travel = crossing;
+    }
+    return false;
+}
+
 void main() {
     vec4 original = texture(SceneColor, texCoord);
     float depth = texture(SceneDepth, texCoord).r;
@@ -57,26 +108,17 @@ void main() {
         float strength = styles[i].x;
         float width = styles[i].y;
         vec3 relative = rayStart - center;
-        float b = dot(relative, ray);
-        float discriminant = b * b - dot(relative, relative) + radius * radius;
-        if (discriminant <= 0.0) continue;
-
-        float root = sqrt(discriminant);
-        float entry = -b - root;
-        float exitDistance = -b + root;
-        // Use the far surface when the camera is inside the expanding sphere.
-        float hitDistance = entry >= 0.0 ? entry : exitDistance;
-        if (hitDistance <= 0.0 || hitDistance >= sceneDistance) continue;
+        float hitDistance;
+        vec3 normal;
+        if (!blockBallHit(relative, ray, radius, sceneDistance, hitDistance, normal)) continue;
+        if (hitDistance <= 0.0) continue;
 
         vec3 hitPosition = rayStart + ray * hitDistance;
-        vec3 normal = (hitPosition - center) / max(radius, 0.001);
         float incidence = abs(dot(normal, ray));
         float rim = pow(1.0 - incidence, 2.0);
-        float impactParameter = sqrt(max(0.0, dot(relative, relative) - b * b));
-        float silhouette = 1.0 - smoothstep(max(0.0, radius - width), radius, impactParameter);
         float intersectionFade = smoothstep(0.0, width, sceneDistance - hitDistance);
         float nearFade = smoothstep(0.0, 0.12, hitDistance);
-        float visibility = silhouette * intersectionFade * nearFade * strength;
+        float visibility = intersectionFade * nearFade * strength;
 
         // Project a tangent displacement at the actual surface; offscreen origins
         // and inside-sphere views need no special screen-centred fallback effect.
@@ -88,8 +130,7 @@ void main() {
         vec2 pixelDirection = direction * ViewportSize;
         pixelDirection /= max(length(pixelDirection), 0.0001);
 
-        // A small coherent ripple breaks the perfect glass-ball look without
-        // replacing the wavefront with a noisy fog or a solid white shell.
+        // Coherent modulation preserves the clear refractive surface.
         float ripple = sin(dot(normal, vec3(17.0, 23.0, 13.0)) + radius * 1.7 + styles[i].z);
         float pixels = (0.9 + 15.0 * rim) * (1.0 + 0.16 * ripple) * visibility * styles[i].w;
         displacement += pixelDirection * pixels;

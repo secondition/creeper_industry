@@ -10,7 +10,7 @@ public interface SignalReceiverIndex {
 
     Collection<BlockPos> getAll();
 
-    Collection<BlockPos> getWithinManhattanDistance(BlockPos center, int maxDistance);
+    Collection<BlockPos> getWithinSphere(BlockPos center, int radius);
 
     void clear();
 }

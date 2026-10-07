@@ -8,7 +8,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.util.Mth;
-import net.minecraft.world.phys.AABB;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -84,24 +83,18 @@ public final class ClientPulseWavePresentation {
             if (wave.hitLocalPlayer() || player.isSpectator() || !wave.canImpactAt(gameTime)) {
                 continue;
             }
-            AABB box = player.getBoundingBox();
-            double closest = WavePropagationMath.closestDistanceToAABB(wave.origin(), box);
-            double farthest = WavePropagationMath.farthestDistanceToAABB(wave.origin(), box);
-            if (wave.radiusAt(gameTime) >= closest
-                    && wave.radiusAt(gameTime - 1.0) <= farthest
-                    && wave.strengthAt(closest) > 0.0F) {
+            int shell = WavePropagationMath.shell(wave.origin(), player.getBoundingBox().getCenter());
+            if (wave.arrivesAt(shell, gameTime) && wave.strengthAt(shell) > 0.0F) {
                 wave.markLocalPlayerHit();
-                double arrival = Mth.clamp(wave.arrivalTime(closest), gameTime - 1.0, gameTime);
-                FEEDBACK.hit(level, player, wave, closest, arrival);
+                double arrival = Mth.clamp(wave.arrivalTime(shell), gameTime - 1.0, gameTime);
+                FEEDBACK.hit(level, player, wave, shell, arrival);
             }
         }
         if (!player.isSpectator())
             for (ClientPulseWave wave : ClientMachineWaves.arrivals(gameTime, player)) {
-                double closest =
-                        WavePropagationMath.closestDistanceToAABB(
-                                wave.origin(), player.getBoundingBox());
-                double arrival = Mth.clamp(wave.arrivalTime(closest), gameTime - 1.0, gameTime);
-                FEEDBACK.hit(level, player, wave, closest, arrival);
+                int shell = WavePropagationMath.shell(wave.origin(), player.getBoundingBox().getCenter());
+                double arrival = Mth.clamp(wave.arrivalTime(shell), gameTime - 1.0, gameTime);
+                FEEDBACK.hit(level, player, wave, shell, arrival);
             }
     }
 

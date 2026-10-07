@@ -27,7 +27,7 @@ public final class EntityWaveImpactService {
 
         Vec3 origin = emission.origin();
         Explosion explosion = emission.originalExplosion();
-        double queryRadius = Math.max(currentRadius, 0.25);
+        double queryRadius = currentRadius + 0.5;
         AABB queryBox =
                 new AABB(
                         origin.x - queryRadius,
@@ -46,13 +46,9 @@ public final class EntityWaveImpactService {
             }
 
             AABB entityBox = entity.getBoundingBox();
-            double closestDist = WavePropagationMath.closestDistanceToAABB(origin, entityBox);
-            double farthestDist = WavePropagationMath.farthestDistanceToAABB(origin, entityBox);
-
-            if (currentRadius < closestDist) {
-                continue;
-            }
-            if (previousRadius > farthestDist) {
+            int shell = WavePropagationMath.shell(origin, entityBox.getCenter());
+            if (shell > currentRadius
+                    || (gameTime > emission.emissionGameTime() && shell <= previousRadius)) {
                 continue;
             }
 
@@ -64,7 +60,7 @@ public final class EntityWaveImpactService {
             double effectiveAmplitude =
                     WavePropagationMath.effectiveAmplitude(
                             Math.abs(emission.sourceAmplitude()),
-                            closestDist,
+                            shell,
                             emission.profile().attenuationPerBlock());
             if (effectiveAmplitude <= 0) {
                 continue;

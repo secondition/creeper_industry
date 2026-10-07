@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 
-/** Depth-aware refraction of camera-relative spheres in one bounded fullscreen pass. */
+/** Depth-aware refraction of block-shell surfaces in one bounded fullscreen pass. */
 public final class PulseWaveRenderer {
     private static final int MAX_RENDERED_WAVES = 8;
     private static final ClientPulseWave[] SELECTED = new ClientPulseWave[MAX_RENDERED_WAVES];
@@ -151,24 +151,25 @@ public final class PulseWaveRenderer {
         for (ClientPulseWave wave : waves) {
             double radius = wave.radiusAt(gameTime);
             float strength = wave.visualStrength(radius);
-            if (radius <= 0.0 || strength <= 0.001F || wave.isExpired(gameTime)) {
+            if (strength <= 0.001F || wave.isExpired(gameTime)) {
                 continue;
             }
             Vec3 origin = wave.origin();
+            double extent = radius + 0.5;
             if (!event.getFrustum()
                     .isVisible(
                             new AABB(
-                                    origin.x - radius,
-                                    origin.y - radius,
-                                    origin.z - radius,
-                                    origin.x + radius,
-                                    origin.y + radius,
-                                    origin.z + radius))) {
+                                    origin.x - extent,
+                                    origin.y - extent,
+                                    origin.z - extent,
+                                    origin.x + extent,
+                                    origin.y + extent,
+                                    origin.z + extent))) {
                 continue;
             }
             double distanceSquared = origin.distanceToSqr(camera);
             double score =
-                    strength * Math.min(1.0, radius * radius / Math.max(1.0, distanceSquared));
+                    strength * Math.min(1.0, extent * extent / Math.max(1.0, distanceSquared));
             int index = Math.min(count, MAX_RENDERED_WAVES - 1);
             if (count == MAX_RENDERED_WAVES && score <= SCORES[index]) {
                 continue;
